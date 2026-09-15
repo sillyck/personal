@@ -72,11 +72,26 @@ export function dueInfo(task) {
   return { due, diffDays, label, overdue: diffDays < 0 };
 }
 
-export function priorityInfo(diffDays) {
-  if (diffDays < 0) return { rank: 0, key: 'urgent', label: 'Urgent' };
-  if (diffDays <= 1) return { rank: 1, key: 'alta', label: 'Alta' };
-  if (diffDays <= 7) return { rank: 2, key: 'normal', label: 'Normal' };
-  return { rank: 3, key: 'baixa', label: 'Baixa' };
+export const PRIORITY_LEVELS = [
+  { key: 'urgent', rank: 0, label: 'Urgent' },
+  { key: 'alta', rank: 1, label: 'Alta' },
+  { key: 'normal', rank: 2, label: 'Normal' },
+  { key: 'baixa', rank: 3, label: 'Baixa' },
+];
+const PRIORITY_BY_KEY = Object.fromEntries(PRIORITY_LEVELS.map((p) => [p.key, p]));
+
+function autoPriority(diffDays) {
+  if (diffDays < 0) return PRIORITY_BY_KEY.urgent;
+  if (diffDays <= 1) return PRIORITY_BY_KEY.alta;
+  if (diffDays <= 7) return PRIORITY_BY_KEY.normal;
+  return PRIORITY_BY_KEY.baixa;
+}
+
+export function priorityInfo(task) {
+  if (task.priority_override && PRIORITY_BY_KEY[task.priority_override]) {
+    return { ...PRIORITY_BY_KEY[task.priority_override], manual: true };
+  }
+  return { ...autoPriority(dueInfo(task).diffDays), manual: false };
 }
 
 /**

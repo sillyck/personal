@@ -2,7 +2,7 @@ import { supabase, supabaseReady } from './supabaseClient.js';
 import { signIn, signOut, getSession, onAuthChange } from './auth.js';
 import {
   WEEKDAY_LABELS, FREQUENCY_LABELS, FREQUENCY_PHRASES, FREQUENCY_ORDER, CATEGORIES, EFFORTS,
-  STATUS_ORDER, STATUS_LABELS,
+  STATUS_ORDER, STATUS_LABELS, PRIORITY_LEVELS,
   fetchRooms, fetchTasks, createTask, updateTask, deleteTask, markTaskDone, fetchCompletions,
   dueInfo, priorityInfo, effectiveStatus, setTaskStatus,
 } from './tasks.js';
@@ -147,8 +147,8 @@ function renderKanban() {
 
   STATUS_ORDER.forEach((status) => {
     const items = byStatus[status].sort((a, b) => {
-      const pa = priorityInfo(dueInfo(a).diffDays).rank;
-      const pb = priorityInfo(dueInfo(b).diffDays).rank;
+      const pa = priorityInfo(a).rank;
+      const pb = priorityInfo(b).rank;
       if (pa !== pb) return pa - pb;
       return FREQUENCY_ORDER[a.frequency] - FREQUENCY_ORDER[b.frequency];
     });
@@ -177,7 +177,7 @@ function renderKanban() {
 function taskCardHtml(task) {
   const roomName = task.rooms?.name || 'General';
   const info = dueInfo(task);
-  const priority = priorityInfo(info.diffDays);
+  const priority = priorityInfo(task);
   const status = effectiveStatus(task);
   return `
     <div class="task-card" draggable="true" data-id="${task.id}">
@@ -188,7 +188,7 @@ function taskCardHtml(task) {
         <span class="badge">${WEEKDAY_LABELS[task.weekday]}</span>
       </div>
       <div class="priority-row">
-        <span class="priority priority-${priority.key}"><span class="priority-dot"></span>${priority.label}</span>
+        <span class="priority priority-${priority.key}"><span class="priority-dot"></span>${priority.label}${priority.manual ? ' <span class="manual-tag">manual</span>' : ''}</span>
         <span class="due-info ${info.overdue ? 'overdue' : ''}">${info.label}</span>
       </div>
       <div class="frequency-line">${FREQUENCY_PHRASES[task.frequency]}</div>
@@ -308,6 +308,7 @@ function handleEdit(taskId) {
   document.getElementById('task-effort').value = task.effort;
   document.getElementById('task-weekday').value = String(task.weekday);
   document.getElementById('task-frequency').value = task.frequency;
+  document.getElementById('task-priority').value = task.priority_override || '';
   taskModal.hidden = false;
 }
 
@@ -323,6 +324,8 @@ function populateTaskFormSelects() {
   document.getElementById('task-weekday').innerHTML = WEEKDAY_LABELS.map((w, i) => `<option value="${i}">${w}</option>`).join('');
   document.getElementById('task-frequency').innerHTML = Object.entries(FREQUENCY_LABELS)
     .map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
+  document.getElementById('task-priority').innerHTML = '<option value="">Automatica (segons la data)</option>' +
+    PRIORITY_LEVELS.map((p) => `<option value="${p.key}">${p.label}</option>`).join('');
 }
 
 let editingTaskId = null;
@@ -347,6 +350,7 @@ taskForm.addEventListener('submit', async (e) => {
     effort: document.getElementById('task-effort').value,
     weekday: Number(document.getElementById('task-weekday').value),
     frequency: document.getElementById('task-frequency').value,
+    priority_override: document.getElementById('task-priority').value || null,
   };
   try {
     if (editingTaskId) {

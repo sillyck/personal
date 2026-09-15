@@ -248,6 +248,8 @@ input:focus, select:focus, button:focus-visible {
 
 .priority { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
 
+.manual-tag { font-weight: 400; color: var(--text-muted); text-transform: lowercase; font-size: 11px; }
+
 .priority-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 
 .priority-urgent { color: var(--danger); }
