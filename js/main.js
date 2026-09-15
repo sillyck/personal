@@ -2,7 +2,7 @@ import { supabase, supabaseReady } from './supabaseClient.js';
 import { signIn, signOut, getSession, onAuthChange } from './auth.js';
 import {
   WEEKDAY_LABELS, FREQUENCY_LABELS, CATEGORIES, EFFORTS, STATUS_ORDER, STATUS_LABELS,
-  fetchRooms, fetchTasks, createTask, deleteTask, markTaskDone, fetchCompletions,
+  fetchRooms, fetchTasks, createTask, updateTask, deleteTask, markTaskDone, fetchCompletions,
   dueInfo, effectiveStatus, setTaskStatus,
 } from './tasks.js';
 import { PROACTIVE_CATEGORIES, fetchProactiveContent } from './proactive.js';
@@ -23,6 +23,14 @@ let activeProactiveCategory = 'decoracio';
 function showLoginError(message) {
   loginError.textContent = message;
   loginError.hidden = false;
+}
+
+function showToast(message, isError = false) {
+  const toast = document.createElement('div');
+  toast.className = 'toast' + (isError ? ' toast-error' : '');
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
 }
 
 if (!supabaseReady) {
@@ -147,8 +155,15 @@ function renderKanban() {
   board.querySelectorAll('.delete-btn').forEach((btn) =>
     btn.addEventListener('click', () => handleDelete(btn.dataset.id))
   );
-  board.querySelectorAll('.status-select').forEach((sel) =>
-    sel.addEventListener('change', () => applyStatusChange(sel.dataset.id, sel.value))
+  board.querySelectorAll('.edit-btn').forEach((btn) =>
+    btn.addEventListener('click', () => handleEdit(btn.dataset.id))
+  );
+  board.querySelectorAll('.status-select').forEach((sel) => {
+    sel.addEventListener('mousedown', (e) => e.stopPropagation());
+    sel.addEventListener('change', () => applyStatusChange(sel.dataset.id, sel.value));
+  });
+  board.querySelectorAll('.task-card-actions button').forEach((btn) =>
+    btn.addEventListener('mousedown', (e) => e.stopPropagation())
   );
   wireDragEvents(board);
 }
@@ -169,10 +184,11 @@ function taskCardHtml(task) {
       <div class="due-info ${info.overdue ? 'overdue' : ''}">${info.label}</div>
       ${status === 'bloquejat' && task.blocked_reason ? `<div class="blocked-note">${task.blocked_reason}</div>` : ''}
       <div class="task-card-actions">
-        <select class="status-select" data-id="${task.id}" aria-label="Canvia l'estat">
+        <select class="status-select" data-id="${task.id}" draggable="false" aria-label="Canvia l'estat">
           ${STATUS_ORDER.map((s) => `<option value="${s}" ${s === status ? 'selected' : ''}>${STATUS_LABELS[s]}</option>`).join('')}
         </select>
-        <button class="delete-btn" data-id="${task.id}">Elimina</button>
+        <button class="edit-btn" data-id="${task.id}" draggable="false">Edita</button>
+        <button class="delete-btn" data-id="${task.id}" draggable="false">Elimina</button>
       </div>
     </div>`;
 }
@@ -216,19 +232,28 @@ async function applyStatusChange(taskId, newStatus) {
     await handleMarkDone(taskId);
     return;
   }
-  await setTaskStatus(taskId, newStatus);
-  tasks = await fetchTasks();
-  renderKanban();
+  try {
+    await setTaskStatus(taskId, newStatus);
+    tasks = await fetchTasks();
+    renderKanban();
+  } catch (err) {
+    showToast('No s\'ha pogut canviar l\'estat: ' + err.message, true);
+    renderKanban();
+  }
 }
 
 blockedForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const reason = document.getElementById('blocked-reason').value.trim();
-  await setTaskStatus(pendingBlockTaskId, 'bloquejat', reason);
-  blockedModal.hidden = true;
-  pendingBlockTaskId = null;
-  tasks = await fetchTasks();
-  renderKanban();
+  try {
+    await setTaskStatus(pendingBlockTaskId, 'bloquejat', reason);
+    blockedModal.hidden = true;
+    pendingBlockTaskId = null;
+    tasks = await fetchTasks();
+    renderKanban();
+  } catch (err) {
+    showToast('No s\'ha pogut bloquejar: ' + err.message, true);
+  }
 });
 
 document.getElementById('blocked-cancel').addEventListener('click', () => {
@@ -238,19 +263,42 @@ document.getElementById('blocked-cancel').addEventListener('click', () => {
 
 async function handleMarkDone(taskId) {
   const task = tasks.find((t) => t.id === taskId);
-  await markTaskDone(task);
-  const since = new Date();
-  since.setDate(since.getDate() - 30);
-  [tasks, completions] = await Promise.all([fetchTasks(), fetchCompletions(since.toISOString().slice(0, 10))]);
-  renderKanban();
-  renderStats();
+  try {
+    await markTaskDone(task);
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    [tasks, completions] = await Promise.all([fetchTasks(), fetchCompletions(since.toISOString().slice(0, 10))]);
+    renderKanban();
+    renderStats();
+  } catch (err) {
+    showToast('No s\'ha pogut marcar com a feta: ' + err.message, true);
+    renderKanban();
+  }
 }
 
 async function handleDelete(taskId) {
   if (!confirm('Eliminar aquesta tasca?')) return;
-  await deleteTask(taskId);
-  tasks = await fetchTasks();
-  renderKanban();
+  try {
+    await deleteTask(taskId);
+    tasks = await fetchTasks();
+    renderKanban();
+  } catch (err) {
+    showToast('No s\'ha pogut eliminar: ' + err.message, true);
+  }
+}
+
+function handleEdit(taskId) {
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return;
+  editingTaskId = taskId;
+  document.getElementById('task-modal-title').textContent = 'Edita tasca';
+  document.getElementById('task-title').value = task.title;
+  document.getElementById('task-room').value = task.room_id || '';
+  document.getElementById('task-category').value = task.category;
+  document.getElementById('task-effort').value = task.effort;
+  document.getElementById('task-weekday').value = String(task.weekday);
+  document.getElementById('task-frequency').value = task.frequency;
+  taskModal.hidden = false;
 }
 
 /* New task modal */
@@ -258,7 +306,8 @@ const taskModal = document.getElementById('task-modal');
 const taskForm = document.getElementById('task-form');
 
 function populateTaskFormSelects() {
-  document.getElementById('task-room').innerHTML = rooms.map((r) => `<option value="${r.id}">${r.name}</option>`).join('');
+  document.getElementById('task-room').innerHTML = '<option value="">General (sense habitacio)</option>' +
+    rooms.map((r) => `<option value="${r.id}">${r.name}</option>`).join('');
   document.getElementById('task-category').innerHTML = CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('');
   document.getElementById('task-effort').innerHTML = EFFORTS.map((ef) => `<option value="${ef}">${ef}</option>`).join('');
   document.getElementById('task-weekday').innerHTML = WEEKDAY_LABELS.map((w, i) => `<option value="${i}">${w}</option>`).join('');
@@ -266,8 +315,12 @@ function populateTaskFormSelects() {
     .map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
 }
 
+let editingTaskId = null;
+
 document.getElementById('new-task-btn').addEventListener('click', () => {
+  editingTaskId = null;
   taskForm.reset();
+  document.getElementById('task-modal-title').textContent = 'Nova tasca';
   taskModal.hidden = false;
 });
 
@@ -277,17 +330,27 @@ document.getElementById('task-cancel').addEventListener('click', () => {
 
 taskForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  await createTask({
+  const fields = {
     title: document.getElementById('task-title').value.trim(),
-    room_id: document.getElementById('task-room').value,
+    room_id: document.getElementById('task-room').value || null,
     category: document.getElementById('task-category').value,
     effort: document.getElementById('task-effort').value,
     weekday: Number(document.getElementById('task-weekday').value),
     frequency: document.getElementById('task-frequency').value,
-  });
-  taskModal.hidden = true;
-  tasks = await fetchTasks();
-  renderKanban();
+  };
+  try {
+    if (editingTaskId) {
+      await updateTask(editingTaskId, fields);
+    } else {
+      await createTask(fields);
+    }
+    taskModal.hidden = true;
+    editingTaskId = null;
+    tasks = await fetchTasks();
+    renderKanban();
+  } catch (err) {
+    showToast('No s\'ha pogut desar la tasca: ' + err.message, true);
+  }
 });
 
 /* Vida proactiva */
