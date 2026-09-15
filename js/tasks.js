@@ -1,26 +1,37 @@
 import { supabase } from './supabaseClient.js';
 
 export const WEEKDAY_LABELS = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
-export const FREQUENCY_LABELS = {
-  setmanal: 'Setmanal',
-  quinzenal: 'Quinzenal',
-  mensual: 'Mensual',
-  trimestral: 'Trimestral',
-  semestral: 'Semestral',
-  anual: 'Anual',
-};
+export const WEEKDAY_SHORT = ['Dg', 'Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds'];
 export const CATEGORIES = ['Neteja', 'Vidres', 'Mobles', 'Manteniment', 'Ordre'];
 export const EFFORTS = ['baix', 'mitja', 'alt'];
 
-export const FREQUENCY_ORDER = { setmanal: 0, quinzenal: 1, mensual: 2, trimestral: 3, semestral: 4, anual: 5 };
-export const FREQUENCY_PHRASES = {
-  setmanal: 'Cada setmana',
-  quinzenal: 'Cada 15 dies',
-  mensual: 'Cada mes',
-  trimestral: 'Cada 3 mesos',
-  semestral: 'Cada 6 mesos',
-  anual: 'Cada any',
-};
+export const FREQUENCY_PRESETS = [
+  { label: 'Cada dia', interval: 1, weekdays: [] },
+  { label: 'Cada 2 dies', interval: 2, weekdays: [] },
+  { label: 'Cada 3 dies', interval: 3, weekdays: [] },
+  { label: 'Cada setmana', interval: 7, weekdays: [] },
+  { label: 'Cada dissabte', interval: 7, weekdays: [6] },
+  { label: 'Cap de setmana', interval: 7, weekdays: [6, 0] },
+  { label: 'Cada 2 setmanes', interval: 14, weekdays: [] },
+  { label: 'Cada mes', interval: 30, weekdays: [] },
+];
+
+export function frequencyPhrase(task) {
+  const n = task.interval_days;
+  const wds = task.preferred_weekdays || [];
+
+  if (n === 7 && wds.length === 1) return `Cada ${WEEKDAY_LABELS[wds[0]].toLowerCase()}`;
+  if (n === 7 && wds.length === 2 && wds.includes(6) && wds.includes(0)) return 'Cada cap de setmana';
+
+  let base;
+  if (n === 1) base = 'Cada dia';
+  else if (n % 7 === 0) base = n === 7 ? 'Cada setmana' : `Cada ${n / 7} setmanes`;
+  else base = `Cada ${n} dies`;
+
+  if (wds.length === 0) return base;
+  const dayNames = wds.slice().sort((a, b) => a - b).map((w) => WEEKDAY_LABELS[w]);
+  return `${base} (${dayNames.join(', ')})`;
+}
 
 export const STATUS_ORDER = ['previst', 'pendent', 'en_proces', 'bloquejat', 'fet'];
 export const STATUS_LABELS = {
@@ -31,31 +42,27 @@ export const STATUS_LABELS = {
   fet: 'Fet',
 };
 
-function addInterval(date, frequency) {
+function addDays(date, days) {
   const d = new Date(date);
-  switch (frequency) {
-    case 'setmanal': d.setDate(d.getDate() + 7); break;
-    case 'quinzenal': d.setDate(d.getDate() + 14); break;
-    case 'mensual': d.setMonth(d.getMonth() + 1); break;
-    case 'trimestral': d.setMonth(d.getMonth() + 3); break;
-    case 'semestral': d.setMonth(d.getMonth() + 6); break;
-    case 'anual': d.setFullYear(d.getFullYear() + 1); break;
-  }
+  d.setDate(d.getDate() + days);
   return d;
 }
 
-function snapToWeekday(date, weekday) {
+function nextPreferredWeekday(date, preferredWeekdays) {
+  if (!preferredWeekdays || preferredWeekdays.length === 0) return date;
   const d = new Date(date);
-  const diff = (weekday - d.getDay() + 7) % 7;
-  d.setDate(d.getDate() + diff);
+  for (let i = 0; i < 7; i++) {
+    if (preferredWeekdays.includes(d.getDay())) return d;
+    d.setDate(d.getDate() + 1);
+  }
   return d;
 }
 
 export function computeNextDue(task) {
   const base = task.last_completed_at
-    ? addInterval(task.last_completed_at, task.frequency)
+    ? addDays(task.last_completed_at, task.interval_days)
     : new Date(task.created_at);
-  return snapToWeekday(base, task.weekday);
+  return nextPreferredWeekday(base, task.preferred_weekdays);
 }
 
 export function dueInfo(task) {
@@ -161,7 +168,7 @@ export async function setTaskStatus(taskId, status, reason = null) {
 export async function fetchCompletions(sinceDate) {
   const { data, error } = await supabase
     .from('task_completions')
-    .select('*, tasks(title, room_id, weekday)')
+    .select('*, tasks(title, room_id)')
     .gte('completed_at', sinceDate);
   if (error) throw error;
   return data;

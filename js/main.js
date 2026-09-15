@@ -1,7 +1,7 @@
 import { supabase, supabaseReady } from './supabaseClient.js';
 import { signIn, signOut, getSession, onAuthChange } from './auth.js';
 import {
-  WEEKDAY_LABELS, FREQUENCY_LABELS, FREQUENCY_PHRASES, FREQUENCY_ORDER, CATEGORIES, EFFORTS,
+  WEEKDAY_SHORT, FREQUENCY_PRESETS, frequencyPhrase, CATEGORIES, EFFORTS,
   STATUS_ORDER, STATUS_LABELS, PRIORITY_LEVELS,
   fetchRooms, fetchTasks, createTask, updateTask, deleteTask, markTaskDone, fetchCompletions,
   dueInfo, priorityInfo, effectiveStatus, setTaskStatus,
@@ -150,7 +150,7 @@ function renderKanban() {
       const pa = priorityInfo(a).rank;
       const pb = priorityInfo(b).rank;
       if (pa !== pb) return pa - pb;
-      return FREQUENCY_ORDER[a.frequency] - FREQUENCY_ORDER[b.frequency];
+      return a.interval_days - b.interval_days;
     });
     const container = board.querySelector(`.kanban-cards[data-status="${status}"]`);
     container.innerHTML = items.length
@@ -185,13 +185,12 @@ function taskCardHtml(task) {
       <div class="meta">
         <span class="badge">${roomName}</span>
         <span class="badge">${task.category}</span>
-        <span class="badge">${WEEKDAY_LABELS[task.weekday]}</span>
       </div>
       <div class="priority-row">
         <span class="priority priority-${priority.key}"><span class="priority-dot"></span>${priority.label}${priority.manual ? ' <span class="manual-tag">manual</span>' : ''}</span>
         <span class="due-info ${info.overdue ? 'overdue' : ''}">${info.label}</span>
       </div>
-      <div class="frequency-line">${FREQUENCY_PHRASES[task.frequency]}</div>
+      <div class="frequency-line">${frequencyPhrase(task)}</div>
       ${status === 'bloquejat' && task.blocked_reason ? `<div class="blocked-note">${task.blocked_reason}</div>` : ''}
       <div class="task-card-actions">
         <select class="status-select" data-id="${task.id}" draggable="false" aria-label="Canvia l'estat">
@@ -297,6 +296,16 @@ async function handleDelete(taskId) {
   }
 }
 
+function getSelectedWeekdays() {
+  return Array.from(document.querySelectorAll('.weekday-toggle.active')).map((b) => Number(b.dataset.day));
+}
+
+function setSelectedWeekdays(days) {
+  document.querySelectorAll('.weekday-toggle').forEach((b) => {
+    b.classList.toggle('active', days.includes(Number(b.dataset.day)));
+  });
+}
+
 function handleEdit(taskId) {
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return;
@@ -306,8 +315,8 @@ function handleEdit(taskId) {
   document.getElementById('task-room').value = task.room_id || '';
   document.getElementById('task-category').value = task.category;
   document.getElementById('task-effort').value = task.effort;
-  document.getElementById('task-weekday').value = String(task.weekday);
-  document.getElementById('task-frequency').value = task.frequency;
+  document.getElementById('task-interval').value = task.interval_days;
+  setSelectedWeekdays(task.preferred_weekdays || []);
   document.getElementById('task-priority').value = task.priority_override || '';
   taskModal.hidden = false;
 }
@@ -321,11 +330,26 @@ function populateTaskFormSelects() {
     rooms.map((r) => `<option value="${r.id}">${r.name}</option>`).join('');
   document.getElementById('task-category').innerHTML = CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('');
   document.getElementById('task-effort').innerHTML = EFFORTS.map((ef) => `<option value="${ef}">${ef}</option>`).join('');
-  document.getElementById('task-weekday').innerHTML = WEEKDAY_LABELS.map((w, i) => `<option value="${i}">${w}</option>`).join('');
-  document.getElementById('task-frequency').innerHTML = Object.entries(FREQUENCY_LABELS)
-    .map(([key, label]) => `<option value="${key}">${label}</option>`).join('');
   document.getElementById('task-priority').innerHTML = '<option value="">Automatica (segons la data)</option>' +
     PRIORITY_LEVELS.map((p) => `<option value="${p.key}">${p.label}</option>`).join('');
+
+  document.getElementById('task-weekdays').innerHTML = WEEKDAY_SHORT.map((label, i) =>
+    `<button type="button" class="weekday-toggle" data-day="${i}">${label}</button>`
+  ).join('');
+  document.querySelectorAll('.weekday-toggle').forEach((btn) =>
+    btn.addEventListener('click', () => btn.classList.toggle('active'))
+  );
+
+  document.getElementById('frequency-presets').innerHTML = FREQUENCY_PRESETS.map((p, i) =>
+    `<button type="button" class="preset-btn" data-preset="${i}">${p.label}</button>`
+  ).join('');
+  document.querySelectorAll('.preset-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const preset = FREQUENCY_PRESETS[Number(btn.dataset.preset)];
+      document.getElementById('task-interval').value = preset.interval;
+      setSelectedWeekdays(preset.weekdays);
+    });
+  });
 }
 
 let editingTaskId = null;
@@ -333,6 +357,7 @@ let editingTaskId = null;
 document.getElementById('new-task-btn').addEventListener('click', () => {
   editingTaskId = null;
   taskForm.reset();
+  setSelectedWeekdays([]);
   document.getElementById('task-modal-title').textContent = 'Nova tasca';
   taskModal.hidden = false;
 });
@@ -348,8 +373,8 @@ taskForm.addEventListener('submit', async (e) => {
     room_id: document.getElementById('task-room').value || null,
     category: document.getElementById('task-category').value,
     effort: document.getElementById('task-effort').value,
-    weekday: Number(document.getElementById('task-weekday').value),
-    frequency: document.getElementById('task-frequency').value,
+    interval_days: Number(document.getElementById('task-interval').value),
+    preferred_weekdays: getSelectedWeekdays(),
     priority_override: document.getElementById('task-priority').value || null,
   };
   try {

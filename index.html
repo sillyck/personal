@@ -76,12 +76,17 @@
     <label>Esforç
       <select id="task-effort"></select>
     </label>
-    <label>Dia de la setmana
-      <select id="task-weekday"></select>
+    <div class="field-group">
+      <span class="field-label">Freqüencia habitual</span>
+      <div class="preset-row" id="frequency-presets"></div>
+    </div>
+    <label>Cada quants dies
+      <input type="number" id="task-interval" min="1" value="7" required>
     </label>
-    <label>Freqüencia
-      <select id="task-frequency"></select>
-    </label>
+    <div class="field-group">
+      <span class="field-label">Dies preferits (opcional)</span>
+      <div class="weekday-row" id="task-weekdays"></div>
+    </div>
     <label>Prioritat
       <select id="task-priority"></select>
     </label>
