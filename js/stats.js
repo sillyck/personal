@@ -1,4 +1,4 @@
-import { taskStatus } from './tasks.js';
+import { dueInfo } from './tasks.js';
 
 export function computeStats(tasks, completions, rooms) {
   const now = new Date();
@@ -7,7 +7,7 @@ export function computeStats(tasks, completions, rooms) {
   const thirtyDaysAgo = new Date(now);
   thirtyDaysAgo.setDate(now.getDate() - 30);
 
-  const overdueCount = tasks.filter((t) => taskStatus(t).bucket === 'endarrerida').length;
+  const overdueCount = tasks.filter((t) => dueInfo(t).overdue).length;
   const last7 = completions.filter((c) => new Date(c.completed_at) >= sevenDaysAgo).length;
   const last30 = completions.filter((c) => new Date(c.completed_at) >= thirtyDaysAgo).length;
 

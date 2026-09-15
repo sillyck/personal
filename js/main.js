@@ -1,8 +1,9 @@
 import { supabase, supabaseReady } from './supabaseClient.js';
 import { signIn, signOut, getSession, onAuthChange } from './auth.js';
 import {
-  WEEKDAY_LABELS, FREQUENCY_LABELS, CATEGORIES, EFFORTS,
-  fetchRooms, fetchTasks, createTask, deleteTask, markTaskDone, fetchCompletions, taskStatus,
+  WEEKDAY_LABELS, FREQUENCY_LABELS, CATEGORIES, EFFORTS, STATUS_ORDER, STATUS_LABELS,
+  fetchRooms, fetchTasks, createTask, deleteTask, markTaskDone, fetchCompletions,
+  dueInfo, effectiveStatus, setTaskStatus,
 } from './tasks.js';
 import { PROACTIVE_CATEGORIES, fetchProactiveContent } from './proactive.js';
 import { computeStats } from './stats.js';
@@ -108,6 +109,10 @@ function populateFilterSelects() {
 }
 
 /* Kanban rendering */
+const blockedModal = document.getElementById('blocked-modal');
+const blockedForm = document.getElementById('blocked-form');
+let pendingBlockTaskId = null;
+
 function renderKanban() {
   const roomFilter = document.getElementById('filter-room').value;
   const categoryFilter = document.getElementById('filter-category').value;
@@ -119,40 +124,41 @@ function renderKanban() {
     (!effortFilter || t.effort === effortFilter)
   );
 
-  const columns = { endarrerida: [], pendent: [], cooldown: [] };
-  filtered.forEach((t) => {
-    const status = taskStatus(t);
-    columns[status.bucket].push({ task: t, status });
+  const byStatus = {};
+  STATUS_ORDER.forEach((s) => { byStatus[s] = []; });
+  filtered.forEach((t) => byStatus[effectiveStatus(t)].push(t));
+
+  const board = document.getElementById('kanban');
+  board.innerHTML = STATUS_ORDER.map((status) => `
+    <div class="kanban-col" data-status="${status}">
+      <h2>${STATUS_LABELS[status]} <span class="col-count">${byStatus[status].length}</span></h2>
+      <div class="kanban-cards" data-status="${status}"></div>
+    </div>
+  `).join('');
+
+  STATUS_ORDER.forEach((status) => {
+    const items = byStatus[status].sort((a, b) => dueInfo(a).diffDays - dueInfo(b).diffDays);
+    const container = board.querySelector(`.kanban-cards[data-status="${status}"]`);
+    container.innerHTML = items.length
+      ? items.map((t) => taskCardHtml(t)).join('')
+      : '<p class="empty-col">Cap tasca</p>';
   });
 
-  Object.entries(columns).forEach(([bucket, items]) => {
-    const container = document.getElementById('col-' + bucket);
-    if (items.length === 0) {
-      container.innerHTML = '<p class="empty-col">Cap tasca</p>';
-      return;
-    }
-    items.sort((a, b) => a.status.diffDays - b.status.diffDays);
-    container.innerHTML = items.map(({ task, status }) => taskCardHtml(task, status)).join('');
-  });
-
-  document.querySelectorAll('.done-btn').forEach((btn) =>
-    btn.addEventListener('click', () => handleMarkDone(btn.dataset.id))
-  );
-  document.querySelectorAll('.delete-btn').forEach((btn) =>
+  board.querySelectorAll('.delete-btn').forEach((btn) =>
     btn.addEventListener('click', () => handleDelete(btn.dataset.id))
   );
+  board.querySelectorAll('.status-select').forEach((sel) =>
+    sel.addEventListener('change', () => applyStatusChange(sel.dataset.id, sel.value))
+  );
+  wireDragEvents(board);
 }
 
-function taskCardHtml(task, status) {
-  const roomName = task.rooms?.name || 'Sense habitacio';
-  let dueLabel;
-  if (status.bucket === 'endarrerida') dueLabel = `Fa ${Math.abs(status.diffDays)} dies que toca`;
-  else if (status.diffDays === 0) dueLabel = 'Toca avui';
-  else if (status.diffDays === 1) dueLabel = 'Toca dema';
-  else dueLabel = `Toca en ${status.diffDays} dies`;
-
+function taskCardHtml(task) {
+  const roomName = task.rooms?.name || 'General';
+  const info = dueInfo(task);
+  const status = effectiveStatus(task);
   return `
-    <div class="task-card">
+    <div class="task-card" draggable="true" data-id="${task.id}">
       <div class="title">${task.title}</div>
       <div class="meta">
         <span class="badge">${roomName}</span>
@@ -160,13 +166,75 @@ function taskCardHtml(task, status) {
         <span class="badge">${WEEKDAY_LABELS[task.weekday]}</span>
         <span class="badge">${FREQUENCY_LABELS[task.frequency]}</span>
       </div>
-      <div class="due-info">${dueLabel}</div>
+      <div class="due-info ${info.overdue ? 'overdue' : ''}">${info.label}</div>
+      ${status === 'bloquejat' && task.blocked_reason ? `<div class="blocked-note">${task.blocked_reason}</div>` : ''}
       <div class="task-card-actions">
+        <select class="status-select" data-id="${task.id}" aria-label="Canvia l'estat">
+          ${STATUS_ORDER.map((s) => `<option value="${s}" ${s === status ? 'selected' : ''}>${STATUS_LABELS[s]}</option>`).join('')}
+        </select>
         <button class="delete-btn" data-id="${task.id}">Elimina</button>
-        <button class="done-btn" data-id="${task.id}">Feta</button>
       </div>
     </div>`;
 }
+
+function wireDragEvents(board) {
+  board.querySelectorAll('.task-card').forEach((card) => {
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', card.dataset.id);
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+
+  board.querySelectorAll('.kanban-cards').forEach((col) => {
+    col.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      col.classList.add('drag-over');
+    });
+    col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+    col.addEventListener('drop', (e) => {
+      e.preventDefault();
+      col.classList.remove('drag-over');
+      const taskId = e.dataTransfer.getData('text/plain');
+      applyStatusChange(taskId, col.dataset.status);
+    });
+  });
+}
+
+async function applyStatusChange(taskId, newStatus) {
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task || effectiveStatus(task) === newStatus) return;
+
+  if (newStatus === 'bloquejat') {
+    pendingBlockTaskId = taskId;
+    document.getElementById('blocked-reason').value = task.blocked_reason || '';
+    blockedModal.hidden = false;
+    return;
+  }
+  if (newStatus === 'fet') {
+    await handleMarkDone(taskId);
+    return;
+  }
+  await setTaskStatus(taskId, newStatus);
+  tasks = await fetchTasks();
+  renderKanban();
+}
+
+blockedForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const reason = document.getElementById('blocked-reason').value.trim();
+  await setTaskStatus(pendingBlockTaskId, 'bloquejat', reason);
+  blockedModal.hidden = true;
+  pendingBlockTaskId = null;
+  tasks = await fetchTasks();
+  renderKanban();
+});
+
+document.getElementById('blocked-cancel').addEventListener('click', () => {
+  blockedModal.hidden = true;
+  pendingBlockTaskId = null;
+});
 
 async function handleMarkDone(taskId) {
   const task = tasks.find((t) => t.id === taskId);

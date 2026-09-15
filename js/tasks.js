@@ -12,6 +12,15 @@ export const FREQUENCY_LABELS = {
 export const CATEGORIES = ['Neteja', 'Vidres', 'Mobles', 'Manteniment', 'Ordre'];
 export const EFFORTS = ['baix', 'mitja', 'alt'];
 
+export const STATUS_ORDER = ['previst', 'pendent', 'en_proces', 'bloquejat', 'fet'];
+export const STATUS_LABELS = {
+  previst: 'Previst',
+  pendent: 'Pendent',
+  en_proces: 'En procés',
+  bloquejat: 'Bloquejat',
+  fet: 'Fet',
+};
+
 function addInterval(date, frequency) {
   const d = new Date(date);
   switch (frequency) {
@@ -39,14 +48,31 @@ export function computeNextDue(task) {
   return snapToWeekday(base, task.weekday);
 }
 
-export function taskStatus(task) {
+export function dueInfo(task) {
   const due = computeNextDue(task);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   due.setHours(0, 0, 0, 0);
   const diffDays = Math.round((due - today) / 86400000);
-  const bucket = diffDays < 0 ? 'endarrerida' : diffDays <= 1 ? 'pendent' : 'cooldown';
-  return { bucket, diffDays, due };
+  let label;
+  if (diffDays < 0) label = `Fa ${Math.abs(diffDays)} dies que toca`;
+  else if (diffDays === 0) label = 'Toca avui';
+  else if (diffDays === 1) label = 'Toca demà';
+  else label = `Toca en ${diffDays} dies`;
+  return { due, diffDays, label, overdue: diffDays < 0 };
+}
+
+/**
+ * previst/pendent es recalculen sempre a partir de la data. en_proces i
+ * bloquejat son manuals i no es toquen soles. fet es manual pero es desbloca
+ * cap a pendent quan torna a tocar (mai es queda fet per sempre).
+ */
+export function effectiveStatus(task) {
+  const { diffDays } = dueInfo(task);
+  const dueNow = diffDays <= 0;
+  if (task.status === 'en_proces' || task.status === 'bloquejat') return task.status;
+  if (task.status === 'fet') return dueNow ? 'pendent' : 'fet';
+  return dueNow ? 'pendent' : 'previst';
 }
 
 export async function fetchRooms() {
@@ -76,8 +102,22 @@ export async function markTaskDone(task) {
   const today = new Date().toISOString().slice(0, 10);
   const { error: e1 } = await supabase.from('task_completions').insert({ task_id: task.id, completed_at: today });
   if (e1) throw e1;
-  const { error: e2 } = await supabase.from('tasks').update({ last_completed_at: today }).eq('id', task.id);
+  const { error: e2 } = await supabase.from('tasks').update({
+    last_completed_at: today,
+    status: 'fet',
+    blocked_reason: null,
+    status_changed_at: new Date().toISOString(),
+  }).eq('id', task.id);
   if (e2) throw e2;
+}
+
+export async function setTaskStatus(taskId, status, reason = null) {
+  const { error } = await supabase.from('tasks').update({
+    status,
+    blocked_reason: status === 'bloquejat' ? reason : null,
+    status_changed_at: new Date().toISOString(),
+  }).eq('id', taskId);
+  if (error) throw error;
 }
 
 export async function fetchCompletions(sinceDate) {

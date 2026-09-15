@@ -162,17 +162,26 @@ input:focus, select:focus, button:focus-visible {
 .filters { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .kanban {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  display: flex;
+  gap: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
+  overflow-x: auto;
+}
+
+.kanban-col {
+  flex: 0 0 250px;
+  display: flex;
+  flex-direction: column;
 }
 
 .kanban-col h2 {
-  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -181,7 +190,23 @@ input:focus, select:focus, button:focus-visible {
   border-bottom: 1px solid var(--border);
 }
 
-.kanban-cards { display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
+.col-count {
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 11px;
+}
+
+.kanban-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 60px;
+  border-radius: 8px;
+  transition: background-color 0.15s ease;
+}
+
+.kanban-cards.drag-over { background: var(--green-soft); }
 
 .task-card {
   background: var(--surface-2);
@@ -192,11 +217,15 @@ input:focus, select:focus, button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  cursor: grab;
 }
 
-.kanban-col[data-bucket="endarrerida"] .task-card { border-left-color: var(--danger); }
-.kanban-col[data-bucket="pendent"] .task-card { border-left-color: var(--green); }
-.kanban-col[data-bucket="cooldown"] .task-card { opacity: 0.72; }
+.task-card.dragging { opacity: 0.4; }
+
+.kanban-col[data-status="pendent"] .task-card { border-left-color: var(--green); }
+.kanban-col[data-status="en_proces"] .task-card { border-left-color: var(--amber); }
+.kanban-col[data-status="bloquejat"] .task-card { border-left-color: var(--danger); }
+.kanban-col[data-status="fet"] .task-card { opacity: 0.65; }
 
 .task-card .title { font-weight: 600; font-size: 14px; }
 
@@ -215,11 +244,20 @@ input:focus, select:focus, button:focus-visible {
   padding: 2px 8px;
 }
 
-.task-card .due-info { font-size: 12px; }
-.kanban-col[data-bucket="endarrerida"] .due-info { color: var(--danger); }
-.kanban-col[data-bucket="pendent"] .due-info { color: var(--green-strong); }
+.task-card .due-info { font-size: 12px; color: var(--text-muted); }
+.task-card .due-info.overdue { color: var(--danger); }
 
-.task-card-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 2px; }
+.blocked-note {
+  font-size: 12px;
+  color: var(--amber);
+  background: rgba(185, 154, 91, 0.12);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.task-card-actions { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 2px; }
+
+.status-select { font-size: 11px; padding: 4px 6px; flex: 1; min-width: 0; }
 
 .task-card .done-btn {
   background: var(--green-soft);
@@ -331,9 +369,9 @@ input:focus, select:focus, button:focus-visible {
 
 /* Responsive */
 @media (max-width: 900px) {
-  .kanban { grid-template-columns: 1fr; }
   .topbar { flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
   .content { padding: 16px 14px 32px; }
+  .kanban-col { flex-basis: 78vw; }
 }
 
 @media (max-width: 480px) {

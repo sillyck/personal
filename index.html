@@ -47,20 +47,7 @@
         </div>
         <button id="new-task-btn" class="primary-btn">+ Nova tasca</button>
       </div>
-      <div class="kanban">
-        <div class="kanban-col" data-bucket="endarrerida">
-          <h2>Endarrerides</h2>
-          <div class="kanban-cards" id="col-endarrerida"></div>
-        </div>
-        <div class="kanban-col" data-bucket="pendent">
-          <h2>Pendents</h2>
-          <div class="kanban-cards" id="col-pendent"></div>
-        </div>
-        <div class="kanban-col" data-bucket="cooldown">
-          <h2>En cooldown</h2>
-          <div class="kanban-cards" id="col-cooldown"></div>
-        </div>
-      </div>
+      <div class="kanban" id="kanban"></div>
     </section>
 
     <section id="tab-proactiva" class="tab-panel" hidden>
@@ -98,6 +85,19 @@
     <div class="modal-actions">
       <button type="button" id="task-cancel" class="ghost-btn">Cancel·la</button>
       <button type="submit" class="primary-btn">Desa</button>
+    </div>
+  </form>
+</div>
+
+<div id="blocked-modal" class="modal" hidden>
+  <form id="blocked-form" class="modal-card">
+    <h2>Motiu del bloqueig</h2>
+    <label>Per que esta bloquejada aquesta tasca?
+      <input type="text" id="blocked-reason" required placeholder="Ex: falta comprar producte">
+    </label>
+    <div class="modal-actions">
+      <button type="button" id="blocked-cancel" class="ghost-btn">Cancel·la</button>
+      <button type="submit" class="primary-btn">Bloqueja</button>
     </div>
   </form>
 </div>
