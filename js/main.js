@@ -10,9 +10,11 @@ import { PROACTIVE_CATEGORIES, fetchProactiveContent } from './proactive.js';
 import { computeStats } from './stats.js';
 import { fetchPlaces, createPlace, deletePlace, photoUrl } from './places.js';
 import {
-  fetchDocuments, uploadDocument, deleteDocument, signedDocUrl, fetchDocText, parseCsvPreview,
+  fetchDocuments, uploadDocument, deleteDocument, signedDocUrl, fetchDocText, parseCsv,
+  detectCsvKind, parseOrdersRows, aggregateOrdersToHoldings, parsePlusvaluesRows, upsertHoldingsFromOrders,
   fetchHoldings, createHolding, deleteHolding,
 } from './finances.js';
+import { fetchShoppingList, addShoppingItem, toggleShoppingItem, deleteShoppingItem, clearCheckedItems } from './shopping.js';
 
 const loginView = document.getElementById('login-view');
 const appView = document.getElementById('app-view');
@@ -32,6 +34,7 @@ let activeCountryFeature = null;
 let majorCities = {};
 let documents = [];
 let holdings = [];
+let shoppingItems = [];
 
 function showLoginError(message) {
   loginError.textContent = message;
@@ -89,7 +92,7 @@ if (!supabaseReady) {
 async function loadAll() {
   const since = new Date();
   since.setDate(since.getDate() - 30);
-  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa', 'documents financers', 'actius'];
+  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa', 'documents financers', 'actius', 'llista de la compra'];
   const results = await Promise.allSettled([
     fetchRooms(),
     fetchTasks(),
@@ -98,8 +101,9 @@ async function loadAll() {
     fetchPlaces(),
     fetchDocuments(),
     fetchHoldings(),
+    fetchShoppingList(),
   ]);
-  [rooms, tasks, completions, proactiveContent, places, documents, holdings] = results.map((r) =>
+  [rooms, tasks, completions, proactiveContent, places, documents, holdings, shoppingItems] = results.map((r) =>
     r.status === 'fulfilled' ? r.value : []
   );
   results.forEach((r, i) => {
@@ -113,6 +117,7 @@ async function loadAll() {
   renderProactive();
   renderStats();
   renderFinances();
+  renderShoppingList();
 }
 
 /* Tabs */
@@ -554,8 +559,15 @@ function openCountryModal(feature) {
   document.getElementById('country-modal-title').textContent = feature.properties.name;
   placeForm.reset();
 
-  document.getElementById('place-name-cities').innerHTML =
-    (majorCities[feature.id] || []).map((c) => `<option value="${c}">`).join('');
+  const cityField = document.getElementById('place-city-field');
+  const cities = majorCities[feature.id] || [];
+  if (cities.length) {
+    document.getElementById('place-city-select').innerHTML =
+      '<option value="">-- Tria\'n una --</option>' + cities.map((c) => `<option value="${c}">${c}</option>`).join('');
+    cityField.hidden = false;
+  } else {
+    cityField.hidden = true;
+  }
 
   const regionField = document.getElementById('place-region-field');
   if (feature.id === 'ESP') {
@@ -614,6 +626,10 @@ async function handleDeletePlace(placeId) {
 
 document.getElementById('country-close').addEventListener('click', () => {
   countryModal.hidden = true;
+});
+
+document.getElementById('place-city-select').addEventListener('change', (e) => {
+  if (e.target.value) document.getElementById('place-name').value = e.target.value;
 });
 
 placeForm.addEventListener('submit', async (e) => {
@@ -675,17 +691,56 @@ function renderDocuments() {
   );
 }
 
+let currentOrdersImport = null;
+
 async function handleViewDoc(docId) {
   const doc = documents.find((d) => d.id === docId);
   if (!doc) return;
   try {
     if (doc.file_type === 'csv') {
       const text = await fetchDocText(doc.file_path);
-      const rows = parseCsvPreview(text);
+      const rows = parseCsv(text);
+      const kind = detectCsvKind(rows);
       document.getElementById('csv-preview-title').textContent = doc.label;
-      document.getElementById('csv-preview-table').innerHTML = rows.map((row, i) =>
-        `<tr>${row.map((cell) => `<${i === 0 ? 'th' : 'td'}>${cell}</${i === 0 ? 'th' : 'td'}>`).join('')}</tr>`
-      ).join('');
+      const importBtn = document.getElementById('csv-import-btn');
+
+      if (kind === 'ordres') {
+        const orders = parseOrdersRows(rows);
+        document.getElementById('csv-preview-table').innerHTML =
+          '<tr><th>Data</th><th>ISIN</th><th>Import</th><th>Participacions</th><th>Estat</th></tr>' +
+          orders.map((o) => `
+            <tr>
+              <td>${o.date}</td>
+              <td>${o.isin}</td>
+              <td>${o.amount != null ? o.amount.toFixed(2) + ' €' : ''}</td>
+              <td>${o.units ?? ''}</td>
+              <td><span class="status-badge status-${o.status === 'Finalizada' ? 'ok' : o.status === 'Rechazada' ? 'bad' : 'pending'}">${o.status}</span></td>
+            </tr>
+          `).join('');
+        currentOrdersImport = aggregateOrdersToHoldings(orders);
+        importBtn.hidden = false;
+        importBtn.textContent = `Actualitza actius (${currentOrdersImport.length} fons)`;
+      } else if (kind === 'plusvalues') {
+        const rowsData = parsePlusvaluesRows(rows);
+        document.getElementById('csv-preview-table').innerHTML =
+          '<tr><th>Data</th><th>Inversió</th><th>Valor de mercat</th><th>Resultat</th></tr>' +
+          rowsData.map((r) => `
+            <tr>
+              <td>${r.date}</td>
+              <td>${r.invested != null ? r.invested.toFixed(2) + ' €' : ''}</td>
+              <td>${r.marketValue != null ? r.marketValue.toFixed(2) + ' €' : ''}</td>
+              <td class="${r.result >= 0 ? 'result-positive' : 'result-negative'}">${r.result != null ? r.result.toFixed(2) + ' €' : ''}</td>
+            </tr>
+          `).join('');
+        currentOrdersImport = null;
+        importBtn.hidden = true;
+      } else {
+        document.getElementById('csv-preview-table').innerHTML = rows.slice(0, 30).map((row, i) =>
+          `<tr>${row.map((cell) => `<${i === 0 ? 'th' : 'td'}>${cell}</${i === 0 ? 'th' : 'td'}>`).join('')}</tr>`
+        ).join('');
+        currentOrdersImport = null;
+        importBtn.hidden = true;
+      }
       csvPreviewModal.hidden = false;
     } else {
       const url = await signedDocUrl(doc.file_path);
@@ -695,6 +750,20 @@ async function handleViewDoc(docId) {
     showToast('No s\'ha pogut obrir el document: ' + err.message, true);
   }
 }
+
+document.getElementById('csv-import-btn').addEventListener('click', async () => {
+  if (!currentOrdersImport) return;
+  try {
+    await upsertHoldingsFromOrders(currentOrdersImport, holdings);
+    holdings = await fetchHoldings();
+    renderHoldings();
+    renderDiversification();
+    showToast('Actius actualitzats des del document.');
+    csvPreviewModal.hidden = true;
+  } catch (err) {
+    showToast('No s\'han pogut actualitzar els actius: ' + err.message, true);
+  }
+});
 
 async function handleDeleteDoc(docId) {
   const doc = documents.find((d) => d.id === docId);
@@ -820,6 +889,82 @@ function renderFinances() {
   renderHoldings();
   renderDiversification();
 }
+
+/* Llista de la compra */
+function renderShoppingList() {
+  const list = document.getElementById('shopping-list');
+  const pending = shoppingItems.filter((i) => !i.checked);
+  const checked = shoppingItems.filter((i) => i.checked);
+  document.getElementById('shopping-count').textContent = `${pending.length} pendents, ${checked.length} marcats`;
+
+  if (shoppingItems.length === 0) {
+    list.innerHTML = '<p class="empty-col">La llista esta buida.</p>';
+    return;
+  }
+  const itemRow = (item) => `
+    <label class="shopping-item ${item.checked ? 'checked' : ''}">
+      <input type="checkbox" data-shopping-id="${item.id}" ${item.checked ? 'checked' : ''}>
+      <span class="shopping-item-name">${item.item_name}</span>
+      ${item.note ? `<span class="shopping-item-note">${item.note}</span>` : ''}
+      <button type="button" class="delete-btn" data-shopping-delete="${item.id}">Elimina</button>
+    </label>`;
+  list.innerHTML = pending.map(itemRow).join('') + checked.map(itemRow).join('');
+
+  list.querySelectorAll('[data-shopping-id]').forEach((cb) =>
+    cb.addEventListener('change', () => handleToggleShopping(cb.dataset.shoppingId, cb.checked))
+  );
+  list.querySelectorAll('[data-shopping-delete]').forEach((btn) =>
+    btn.addEventListener('click', () => handleDeleteShopping(btn.dataset.shoppingDelete))
+  );
+}
+
+async function handleToggleShopping(id, checked) {
+  try {
+    const updated = await toggleShoppingItem(id, checked);
+    const idx = shoppingItems.findIndex((i) => i.id === id);
+    if (idx !== -1) shoppingItems[idx] = updated;
+    renderShoppingList();
+  } catch (err) {
+    showToast('No s\'ha pogut actualitzar: ' + err.message, true);
+  }
+}
+
+async function handleDeleteShopping(id) {
+  try {
+    await deleteShoppingItem(id);
+    shoppingItems = shoppingItems.filter((i) => i.id !== id);
+    renderShoppingList();
+  } catch (err) {
+    showToast('No s\'ha pogut eliminar: ' + err.message, true);
+  }
+}
+
+document.getElementById('shopping-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const itemInput = document.getElementById('shopping-item');
+  const noteInput = document.getElementById('shopping-note');
+  try {
+    const created = await addShoppingItem(itemInput.value.trim(), noteInput.value.trim());
+    shoppingItems.push(created);
+    itemInput.value = '';
+    noteInput.value = '';
+    itemInput.focus();
+    renderShoppingList();
+  } catch (err) {
+    showToast('No s\'ha pogut afegir: ' + err.message, true);
+  }
+});
+
+document.getElementById('shopping-clear-btn').addEventListener('click', async () => {
+  if (!shoppingItems.some((i) => i.checked)) return;
+  try {
+    await clearCheckedItems(shoppingItems);
+    shoppingItems = shoppingItems.filter((i) => !i.checked);
+    renderShoppingList();
+  } catch (err) {
+    showToast('No s\'han pogut netejar: ' + err.message, true);
+  }
+});
 
 /* Estadistiques */
 function renderStats() {

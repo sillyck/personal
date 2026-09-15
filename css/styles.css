@@ -497,6 +497,34 @@ input:focus, select:focus, button:focus-visible {
 .csv-preview-wrap th, .csv-preview-wrap td { padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 .csv-preview-wrap th { background: var(--surface-2); position: sticky; top: 0; }
 
+.status-badge { border-radius: 999px; padding: 2px 8px; font-size: 11px; }
+.status-ok { background: var(--green-soft); color: var(--green-strong); }
+.status-bad { background: var(--danger-soft); color: var(--danger); }
+.status-pending { background: var(--surface-2); color: var(--text-muted); }
+
+.result-positive { color: var(--green-strong); }
+.result-negative { color: var(--danger); }
+
+/* Llista de la compra */
+.shopping-add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.shopping-add-row input { flex: 1; min-width: 160px; }
+
+.shopping-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.shopping-item.checked { opacity: 0.55; }
+.shopping-item.checked .shopping-item-name { text-decoration: line-through; }
+.shopping-item-name { font-weight: 600; font-size: 14px; }
+.shopping-item-note { color: var(--text-muted); font-size: 12px; flex: 1; }
+
 /* Mapa de viatges */
 .map-intro { color: var(--text-muted); font-size: 13px; margin-bottom: 12px; }
 

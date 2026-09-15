@@ -36,6 +36,7 @@
       <button class="tab-btn" data-tab="estadistiques">Estadistiques</button>
       <button class="tab-btn" data-tab="mapa">Mapa</button>
       <button class="tab-btn" data-tab="finances">Finances</button>
+      <button class="tab-btn" data-tab="compra">Compra</button>
     </nav>
     <button id="logout-btn" class="ghost-btn">Sortir</button>
   </header>
@@ -89,6 +90,19 @@
         <div class="label" style="margin-bottom:10px;">Diversificacio per país (per cost d'adquisició)</div>
         <div id="country-diversification"></div>
       </div>
+    </section>
+
+    <section id="tab-compra" class="tab-panel" hidden>
+      <form id="shopping-form" class="shopping-add-row">
+        <input type="text" id="shopping-item" placeholder="Que cal comprar?" required>
+        <input type="text" id="shopping-note" placeholder="Nota (opcional): quantitat, marca...">
+        <button type="submit" class="primary-btn">Afegeix</button>
+      </form>
+      <div class="panel-header">
+        <span class="field-label" id="shopping-count"></span>
+        <button type="button" id="shopping-clear-btn" class="ghost-btn">Neteja marcats</button>
+      </div>
+      <div id="shopping-list"></div>
     </section>
   </main>
 </div>
@@ -153,9 +167,11 @@
       <label id="place-region-field" hidden>Regio
         <select id="place-region"></select>
       </label>
+      <label id="place-city-field" hidden>Ciutat coneguda (opcional, o escriu-la a sota)
+        <select id="place-city-select"><option value="">-- Tria'n una --</option></select>
+      </label>
       <label>Nom del lloc (opcional)
-        <input type="text" id="place-name" list="place-name-cities" placeholder="Tria una ciutat o escriu-ne una altra">
-        <datalist id="place-name-cities"></datalist>
+        <input type="text" id="place-name" placeholder="Ex: Roma, o un poble que no surti a la llista">
       </label>
       <label>Des de quan
         <input type="date" id="place-date-from" required>
@@ -199,6 +215,7 @@
     <div class="csv-preview-wrap"><table id="csv-preview-table"></table></div>
     <div class="modal-actions">
       <button type="button" id="csv-preview-close" class="ghost-btn">Tanca</button>
+      <button type="button" id="csv-import-btn" class="primary-btn" hidden>Actualitza actius</button>
     </div>
   </div>
 </div>
