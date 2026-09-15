@@ -135,8 +135,13 @@
         </div>
         <button type="submit" class="primary-btn">Calcula</button>
       </form>
-      <div class="holdings-table-wrap section-spaced">
-        <table id="projection-table"></table>
+      <div class="chart-wrap section-spaced" id="projection-chart-wrap" hidden>
+        <div class="chart-legend">
+          <span class="chart-legend-item"><span class="chart-legend-swatch value"></span>Valor total</span>
+          <span class="chart-legend-item"><span class="chart-legend-swatch contributed"></span>Aportat</span>
+        </div>
+        <div id="projection-chart"></div>
+        <div class="chart-tooltip" id="projection-tooltip"></div>
       </div>
     </section>
 

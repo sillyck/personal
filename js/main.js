@@ -12,7 +12,7 @@ import { fetchPlaces, createPlace, deletePlace, photoUrl } from './places.js';
 import {
   fetchDocuments, uploadDocument, deleteDocument, signedDocUrl, fetchDocText, parseCsv,
   detectCsvKind, parseOrdersRows, aggregateOrdersToHoldings, parsePlusvaluesRows, upsertHoldingsFromOrders,
-  fetchHoldings, createHolding, deleteHolding, setCurrentPrice,
+  fetchHoldings, createHolding, deleteHolding, setCurrentPrice, updateHolding,
   fetchAllocations, addAllocation, deleteAllocation, projectGrowth,
 } from './finances.js';
 import { fetchShoppingList, addShoppingItem, toggleShoppingItem, deleteShoppingItem, clearCheckedItems } from './shopping.js';
@@ -808,6 +808,21 @@ docForm.addEventListener('submit', async (e) => {
     documents.unshift(created);
     docModal.hidden = true;
     renderDocuments();
+
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      const text = await file.text();
+      const rows = parseCsv(text);
+      if (detectCsvKind(rows) === 'ordres') {
+        const orders = parseOrdersRows(rows);
+        const aggregated = aggregateOrdersToHoldings(orders);
+        const updated = await upsertHoldingsFromOrders(aggregated, holdings);
+        updated.forEach((h) => replaceInArray(holdings, h));
+        renderHoldings();
+        renderFinanceStats();
+        const names = updated.map((h) => h.ticker).join(', ');
+        showToast(`Detectat automaticament: actualitzats ${updated.length} actius (${names}).`);
+      }
+    }
   } catch (err) {
     showToast('No s\'ha pogut pujar el document: ' + err.message, true);
   }
@@ -824,7 +839,12 @@ function renderHoldings() {
     ${holdings.map((h) => `
       <tr>
         <td>${h.ticker}</td>
-        <td>${h.name || ''}</td>
+        <td>
+          <form class="name-cell" data-name-form="${h.id}">
+            <input type="text" value="${h.name || ''}" placeholder="Sense nom encara">
+            <button type="submit" class="ghost-btn">Desa</button>
+          </form>
+        </td>
         <td>${h.quantity}</td>
         <td>${h.avg_cost ?? ''}</td>
         <td>
@@ -851,6 +871,22 @@ function renderHoldings() {
       handleSetPrice(form.dataset.priceForm, price ? Number(price) : null);
     })
   );
+  table.querySelectorAll('[data-name-form]').forEach((form) =>
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleSetName(form.dataset.nameForm, form.querySelector('input').value.trim());
+    })
+  );
+}
+
+async function handleSetName(id, name) {
+  try {
+    const updated = await updateHolding(id, { name: name || null });
+    replaceInArray(holdings, updated);
+    showToast('Nom desat.');
+  } catch (err) {
+    showToast('No s\'ha pogut desar el nom: ' + err.message, true);
+  }
 }
 
 async function handleSetPrice(id, price) {
@@ -1050,6 +1086,109 @@ document.getElementById('proj-bump-enable').addEventListener('change', (e) => {
   document.getElementById('proj-bump-fields').hidden = !e.target.checked;
 });
 
+function formatEur(v) {
+  return v.toLocaleString('ca-ES', { maximumFractionDigits: 0 }) + ' €';
+}
+
+function formatCompactEur(v) {
+  if (Math.abs(v) >= 1000) return (v / 1000).toFixed(0) + 'k €';
+  return v.toFixed(0) + ' €';
+}
+
+function renderProjectionChart(results) {
+  document.getElementById('projection-chart-wrap').hidden = false;
+  const container = document.getElementById('projection-chart');
+
+  const width = 680;
+  const height = 320;
+  const padL = 55;
+  const padR = 16;
+  const padT = 16;
+  const padB = 30;
+  const plotW = width - padL - padR;
+  const plotH = height - padT - padB;
+
+  const maxYear = results[results.length - 1].years;
+  const maxValue = Math.max(...results.map((r) => r.value), 1);
+
+  const xFor = (y) => padL + (y / maxYear) * plotW;
+  const yFor = (v) => padT + plotH - (v / maxValue) * plotH;
+
+  const valuePoints = results.map((r) => `${xFor(r.years)},${yFor(r.value)}`).join(' ');
+  const contributedPoints = results.map((r) => `${xFor(r.years)},${yFor(r.contributed)}`).join(' ');
+  const areaPath = `M${xFor(0)},${yFor(0)} L${valuePoints.split(' ').join(' L')} L${xFor(maxYear)},${yFor(0)} Z`;
+
+  const ySteps = 4;
+  const yGridlines = Array.from({ length: ySteps + 1 }, (_, i) => {
+    const v = (maxValue / ySteps) * i;
+    return `<line class="chart-axis-line" x1="${padL}" y1="${yFor(v)}" x2="${width - padR}" y2="${yFor(v)}"></line>
+      <text class="chart-axis-label" x="${padL - 8}" y="${yFor(v) + 3}" text-anchor="end">${formatCompactEur(v)}</text>`;
+  }).join('');
+
+  const xStep = maxYear <= 10 ? 1 : 5;
+  const xLabels = results.filter((r) => r.years % xStep === 0).map((r) =>
+    `<text class="chart-axis-label" x="${xFor(r.years)}" y="${height - padB + 16}" text-anchor="middle">${r.years}a</text>`
+  ).join('');
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" width="100%" style="display:block">
+      ${yGridlines}
+      <path class="chart-value-area" d="${areaPath}"></path>
+      <polyline class="chart-value-line" points="${valuePoints}"></polyline>
+      <polyline class="chart-contributed-line" points="${contributedPoints}"></polyline>
+      ${xLabels}
+      <line class="chart-axis-line" x1="${padL}" y1="${padT + plotH}" x2="${width - padR}" y2="${padT + plotH}"></line>
+      <g id="chart-hover-group" style="display:none">
+        <line class="chart-crosshair" id="chart-crosshair" y1="${padT}" y2="${padT + plotH}"></line>
+        <circle class="chart-hover-dot" id="chart-hover-dot-value" r="4"></circle>
+        <circle class="chart-hover-dot" id="chart-hover-dot-contrib" r="4"></circle>
+      </g>
+      <rect id="chart-hover-target" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent"></rect>
+    </svg>
+  `;
+
+  const svg = container.querySelector('svg');
+  const hoverGroup = document.getElementById('chart-hover-group');
+  const crosshair = document.getElementById('chart-crosshair');
+  const dotValue = document.getElementById('chart-hover-dot-value');
+  const dotContrib = document.getElementById('chart-hover-dot-contrib');
+  const target = document.getElementById('chart-hover-target');
+  const tooltip = document.getElementById('projection-tooltip');
+
+  target.addEventListener('mousemove', (e) => {
+    const rect = svg.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) * (width / rect.width);
+    const yearAtMouse = ((mouseX - padL) / plotW) * maxYear;
+    const idx = Math.max(0, Math.min(results.length - 1, Math.round(yearAtMouse)));
+    const r = results[idx];
+    const cx = xFor(r.years);
+
+    hoverGroup.style.display = '';
+    crosshair.setAttribute('x1', cx);
+    crosshair.setAttribute('x2', cx);
+    dotValue.setAttribute('cx', cx);
+    dotValue.setAttribute('cy', yFor(r.value));
+    dotContrib.setAttribute('cx', cx);
+    dotContrib.setAttribute('cy', yFor(r.contributed));
+
+    tooltip.innerHTML = `
+      <div class="tt-year">Any ${r.years}</div>
+      <div class="tt-row"><span>Valor total</span><span>${formatEur(r.value)}</span></div>
+      <div class="tt-row"><span>Aportat</span><span>${formatEur(r.contributed)}</span></div>
+    `;
+    tooltip.classList.add('visible');
+    const containerRect = container.getBoundingClientRect();
+    const ttLeft = (cx / width) * containerRect.width;
+    tooltip.style.left = Math.min(Math.max(ttLeft - 60, 0), containerRect.width - 160) + 'px';
+    tooltip.style.top = '0px';
+  });
+
+  target.addEventListener('mouseleave', () => {
+    hoverGroup.style.display = 'none';
+    tooltip.classList.remove('visible');
+  });
+}
+
 document.getElementById('projection-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const startValue = Number(document.getElementById('proj-start').value);
@@ -1064,20 +1203,9 @@ document.getElementById('projection-form').addEventListener('submit', (e) => {
       bump = { afterMonths: months, newMonthly };
     }
   }
-  const results = projectGrowth({ startValue, monthlyContribution, annualReturnPct, yearsList: [1, 5, 10, 15, 20, 25, 30], bump });
-  const table = document.getElementById('projection-table');
-  table.innerHTML = '<tr><th>Anys</th><th>Valor projectat</th><th>Aportat total</th><th>Rendiment generat</th></tr>' +
-    results.map((r) => {
-      const growth = r.value - r.contributed;
-      return `
-      <tr>
-        <td>${r.years}</td>
-        <td>${r.value.toLocaleString('ca-ES', { maximumFractionDigits: 0 })} €</td>
-        <td>${r.contributed.toLocaleString('ca-ES', { maximumFractionDigits: 0 })} €</td>
-        <td class="${growth >= 0 ? 'result-positive' : 'result-negative'}">${growth.toLocaleString('ca-ES', { maximumFractionDigits: 0 })} €</td>
-      </tr>
-    `;
-    }).join('');
+  const yearsList = Array.from({ length: 31 }, (_, i) => i);
+  const results = projectGrowth({ startValue, monthlyContribution, annualReturnPct, yearsList, bump });
+  renderProjectionChart(results);
 });
 
 function renderFinances() {
