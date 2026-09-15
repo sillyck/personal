@@ -1,7 +1,7 @@
 import { supabase, supabaseReady } from './supabaseClient.js';
 import { signIn, signOut, getSession, onAuthChange } from './auth.js';
 import {
-  WEEKDAY_SHORT, FREQUENCY_PRESETS, frequencyPhrase, CATEGORIES, EFFORTS,
+  WEEKDAY_SHORT, FREQUENCY_PRESETS, frequencyPhrase, CATEGORIES, EFFORTS, ASSIGNEES,
   STATUS_ORDER, STATUS_LABELS, PRIORITY_LEVELS,
   fetchRooms, fetchTasks, createTask, updateTask, deleteTask, markTaskDone, fetchCompletions,
   dueInfo, priorityInfo, effectiveStatus, setTaskStatus,
@@ -174,6 +174,14 @@ function renderKanban() {
   wireDragEvents(board);
 }
 
+function assigneeBadgesHtml(assignee) {
+  if (!assignee) return '';
+  const badges = assignee === 'ambdos' ? ['marta', 'jordi'] : [assignee];
+  return `<div class="assignee-badges">${badges.map((a) =>
+    `<span class="assignee-badge ${a}">${a === 'marta' ? 'M' : 'J'}</span>`
+  ).join('')}</div>`;
+}
+
 function taskCardHtml(task) {
   const roomName = task.rooms?.name || 'General';
   const info = dueInfo(task);
@@ -181,6 +189,7 @@ function taskCardHtml(task) {
   const status = effectiveStatus(task);
   return `
     <div class="task-card" draggable="true" data-id="${task.id}">
+      ${assigneeBadgesHtml(task.assignee)}
       <div class="title">${task.title}</div>
       <div class="meta">
         <span class="badge">${roomName}</span>
@@ -318,6 +327,7 @@ function handleEdit(taskId) {
   document.getElementById('task-interval').value = task.interval_days;
   setSelectedWeekdays(task.preferred_weekdays || []);
   document.getElementById('task-priority').value = task.priority_override || '';
+  document.getElementById('task-assignee').value = task.assignee || '';
   taskModal.hidden = false;
 }
 
@@ -332,6 +342,8 @@ function populateTaskFormSelects() {
   document.getElementById('task-effort').innerHTML = EFFORTS.map((ef) => `<option value="${ef}">${ef}</option>`).join('');
   document.getElementById('task-priority').innerHTML = '<option value="">Automatica (segons la data)</option>' +
     PRIORITY_LEVELS.map((p) => `<option value="${p.key}">${p.label}</option>`).join('');
+  document.getElementById('task-assignee').innerHTML = '<option value="">Sense assignar</option>' +
+    ASSIGNEES.map((a) => `<option value="${a.key}">${a.label}</option>`).join('');
 
   document.getElementById('task-weekdays').innerHTML = WEEKDAY_SHORT.map((label, i) =>
     `<button type="button" class="weekday-toggle" data-day="${i}">${label}</button>`
@@ -375,6 +387,7 @@ taskForm.addEventListener('submit', async (e) => {
     effort: document.getElementById('task-effort').value,
     interval_days: Number(document.getElementById('task-interval').value),
     preferred_weekdays: getSelectedWeekdays(),
+    assignee: document.getElementById('task-assignee').value || null,
     priority_override: document.getElementById('task-priority').value || null,
   };
   try {

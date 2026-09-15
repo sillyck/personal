@@ -4,6 +4,11 @@ export const WEEKDAY_LABELS = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Di
 export const WEEKDAY_SHORT = ['Dg', 'Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds'];
 export const CATEGORIES = ['Neteja', 'Vidres', 'Mobles', 'Manteniment', 'Ordre'];
 export const EFFORTS = ['baix', 'mitja', 'alt'];
+export const ASSIGNEES = [
+  { key: 'marta', label: 'Marta' },
+  { key: 'jordi', label: 'Jordi' },
+  { key: 'ambdos', label: 'Ambdos' },
+];
 
 export const FREQUENCY_PRESETS = [
   { label: 'Cada dia', interval: 1, weekdays: [] },
