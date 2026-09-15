@@ -1,0 +1,341 @@
+:root {
+  --bg: #10140f;
+  --surface: #171d16;
+  --surface-2: #1f2620;
+  --border: #2b332a;
+  --text: #e8ede4;
+  --text-muted: #93a08e;
+  --green: #6ea37e;
+  --green-strong: #8fc79c;
+  --green-soft: rgba(110, 163, 126, 0.14);
+  --amber: #b99a5b;
+  --danger: #b3624f;
+  --danger-soft: rgba(179, 98, 79, 0.14);
+  --radius: 10px;
+  --font-head: 'Source Serif 4', Georgia, serif;
+  --font-body: 'Source Sans 3', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+}
+
+h1, h2, h3 { font-family: var(--font-head); font-weight: 600; margin: 0; }
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  transition: background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+
+input, select {
+  font-family: var(--font-body);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+input:focus, select:focus, button:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
+.view[hidden] { display: none; }
+
+/* Login */
+#login-view {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-card h1 { font-size: 28px; }
+.login-card .subtitle { color: var(--text-muted); margin: -8px 0 8px; font-size: 14px; }
+
+.login-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.login-card button {
+  background: var(--green);
+  color: #0e150f;
+  font-weight: 600;
+  padding: 10px;
+  margin-top: 6px;
+}
+.login-card button:hover { background: var(--green-strong); }
+
+.error { color: var(--danger); font-size: 13px; }
+
+/* App shell */
+#app-view { min-height: 100vh; display: flex; flex-direction: column; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.brand { font-family: var(--font-head); font-size: 20px; font-weight: 700; }
+
+.tabs { display: flex; gap: 4px; flex: 1; }
+
+.tab-btn {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+.tab-btn:hover { color: var(--text); background: var(--surface-2); }
+.tab-btn.active { color: var(--green-strong); background: var(--green-soft); }
+
+.ghost-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  font-size: 13px;
+}
+.ghost-btn:hover { color: var(--text); border-color: var(--text-muted); }
+
+.primary-btn {
+  background: var(--green);
+  color: #0e150f;
+  font-weight: 600;
+  padding: 9px 16px;
+  font-size: 14px;
+}
+.primary-btn:hover { background: var(--green-strong); }
+
+.content { flex: 1; padding: 20px 24px 40px; max-width: 1280px; width: 100%; margin: 0 auto; }
+
+.tab-panel[hidden] { display: none; }
+
+/* Tasques */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.kanban {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.kanban-col h2 {
+  font-size: 14px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.kanban-cards { display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
+
+.task-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kanban-col[data-bucket="endarrerida"] .task-card { border-left-color: var(--danger); }
+.kanban-col[data-bucket="pendent"] .task-card { border-left-color: var(--green); }
+.kanban-col[data-bucket="cooldown"] .task-card { opacity: 0.72; }
+
+.task-card .title { font-weight: 600; font-size: 14px; }
+
+.task-card .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.task-card .due-info { font-size: 12px; }
+.kanban-col[data-bucket="endarrerida"] .due-info { color: var(--danger); }
+.kanban-col[data-bucket="pendent"] .due-info { color: var(--green-strong); }
+
+.task-card-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 2px; }
+
+.task-card .done-btn {
+  background: var(--green-soft);
+  color: var(--green-strong);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.task-card .done-btn:hover { background: var(--green); color: #0e150f; }
+
+.task-card .delete-btn {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 5px 8px;
+  font-size: 12px;
+}
+.task-card .delete-btn:hover { color: var(--danger); }
+
+.empty-col { color: var(--text-muted); font-size: 13px; padding: 8px 0; }
+
+/* Vida proactiva */
+.subtabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+.subtabs button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 7px 14px;
+  font-size: 13px;
+}
+.subtabs button.active { color: var(--green-strong); border-color: var(--green); background: var(--green-soft); }
+
+.proactive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.proactive-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.proactive-card h3 { font-size: 16px; }
+.proactive-card p { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.proactive-card a { color: var(--green-strong); font-size: 13px; }
+
+/* Estadistiques */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+.stat-card .value { font-family: var(--font-head); font-size: 32px; font-weight: 700; }
+.stat-card .label { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+
+.stat-card.wide { grid-column: 1 / -1; }
+
+.bar-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 13px; }
+.bar-row .name { width: 130px; color: var(--text-muted); flex-shrink: 0; }
+.bar-track { flex: 1; background: var(--surface-2); border-radius: 6px; overflow: hidden; height: 10px; }
+.bar-fill { height: 100%; background: var(--green); }
+.bar-row .count { width: 24px; text-align: right; color: var(--text-muted); }
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 8, 6, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 10;
+}
+.modal[hidden] { display: none; }
+
+.modal-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .kanban { grid-template-columns: 1fr; }
+  .topbar { flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
+  .content { padding: 16px 14px 32px; }
+}
+
+@media (max-width: 480px) {
+  .tabs { order: 3; width: 100%; overflow-x: auto; }
+  .brand { flex: 1; }
+}

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Casa</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="login-view" class="view">
+  <form id="login-form" class="login-card">
+    <h1>Casa</h1>
+    <p class="subtitle">Gestio de la llar</p>
+    <label>Correu
+      <input type="email" id="login-email" required autocomplete="username">
+    </label>
+    <label>Contrasenya
+      <input type="password" id="login-password" required autocomplete="current-password">
+    </label>
+    <button type="submit">Entrar</button>
+    <p id="login-error" class="error" hidden></p>
+  </form>
+</div>
+
+<div id="app-view" class="view" hidden>
+  <header class="topbar">
+    <div class="brand">Casa</div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="tasques">Tasques</button>
+      <button class="tab-btn" data-tab="proactiva">Vida Proactiva</button>
+      <button class="tab-btn" data-tab="estadistiques">Estadistiques</button>
+    </nav>
+    <button id="logout-btn" class="ghost-btn">Sortir</button>
+  </header>
+
+  <main class="content">
+    <section id="tab-tasques" class="tab-panel">
+      <div class="panel-header">
+        <div class="filters">
+          <select id="filter-room"><option value="">Totes les habitacions</option></select>
+          <select id="filter-category"><option value="">Totes les categories</option></select>
+          <select id="filter-effort"><option value="">Tot l'esforç</option></select>
+        </div>
+        <button id="new-task-btn" class="primary-btn">+ Nova tasca</button>
+      </div>
+      <div class="kanban">
+        <div class="kanban-col" data-bucket="endarrerida">
+          <h2>Endarrerides</h2>
+          <div class="kanban-cards" id="col-endarrerida"></div>
+        </div>
+        <div class="kanban-col" data-bucket="pendent">
+          <h2>Pendents</h2>
+          <div class="kanban-cards" id="col-pendent"></div>
+        </div>
+        <div class="kanban-col" data-bucket="cooldown">
+          <h2>En cooldown</h2>
+          <div class="kanban-cards" id="col-cooldown"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-proactiva" class="tab-panel" hidden>
+      <nav class="subtabs" id="proactive-subtabs"></nav>
+      <div class="proactive-grid" id="proactive-grid"></div>
+    </section>
+
+    <section id="tab-estadistiques" class="tab-panel" hidden>
+      <div class="stats-grid" id="stats-grid"></div>
+    </section>
+  </main>
+</div>
+
+<div id="task-modal" class="modal" hidden>
+  <form id="task-form" class="modal-card">
+    <h2>Nova tasca</h2>
+    <label>Titol
+      <input type="text" id="task-title" required>
+    </label>
+    <label>Habitacio
+      <select id="task-room"></select>
+    </label>
+    <label>Categoria
+      <select id="task-category"></select>
+    </label>
+    <label>Esforç
+      <select id="task-effort"></select>
+    </label>
+    <label>Dia de la setmana
+      <select id="task-weekday"></select>
+    </label>
+    <label>Freqüencia
+      <select id="task-frequency"></select>
+    </label>
+    <div class="modal-actions">
+      <button type="button" id="task-cancel" class="ghost-btn">Cancel·la</button>
+      <button type="submit" class="primary-btn">Desa</button>
+    </div>
+  </form>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
