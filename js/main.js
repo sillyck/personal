@@ -14,6 +14,8 @@ import {
   detectCsvKind, parseOrdersRows, aggregateOrdersToHoldings, parsePlusvaluesRows, upsertHoldingsFromOrders,
   fetchHoldings, createHolding, deleteHolding, setCurrentPrice, updateHolding,
   fetchAllocations, addAllocation, deleteAllocation, projectGrowth,
+  ordersToOrderRows, fetchOrders, bulkUpsertOrders, fetchSnapshots, upsertSnapshotToday,
+  loadMsciWorldSeries, computePortfolioHistory,
 } from './finances.js';
 import {
   SUPERMARKETS, SECTIONS, fetchShoppingList, addShoppingItem, updateShoppingItem, toggleShoppingItem,
@@ -45,6 +47,11 @@ let worldGeo = null;
 let financeMap = null;
 let financeCountryLayer = null;
 let activeAllocationHolding = null;
+let holdingOrders = [];
+let snapshots = [];
+let msciSeries = [];
+let portfolioHistory = null;
+let financeSubtab = 'resum';
 
 function showLoginError(message) {
   loginError.textContent = message;
@@ -102,7 +109,7 @@ if (!supabaseReady) {
 async function loadAll() {
   const since = new Date();
   since.setDate(since.getDate() - 30);
-  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa', 'documents financers', 'actius', 'llista de la compra', 'distribucio geografica', 'preus de la compra'];
+  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa', 'documents financers', 'actius', 'llista de la compra', 'distribucio geografica', 'preus de la compra', 'historial d\'ordres', 'fotografies de cartera', 'serie MSCI World'];
   const results = await Promise.allSettled([
     fetchRooms(),
     fetchTasks(),
@@ -114,8 +121,11 @@ async function loadAll() {
     fetchShoppingList(),
     fetchAllocations(),
     fetchItemPrices(),
+    fetchOrders(),
+    fetchSnapshots(),
+    loadMsciWorldSeries(),
   ]);
-  [rooms, tasks, completions, proactiveContent, places, documents, holdings, shoppingItems, allocations, itemPrices] = results.map((r) =>
+  [rooms, tasks, completions, proactiveContent, places, documents, holdings, shoppingItems, allocations, itemPrices, holdingOrders, snapshots, msciSeries] = results.map((r) =>
     r.status === 'fulfilled' ? r.value : []
   );
   results.forEach((r, i) => {
@@ -141,7 +151,6 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     document.querySelectorAll('.tab-panel').forEach((p) => (p.hidden = true));
     document.getElementById('tab-' + btn.dataset.tab).hidden = false;
     if (btn.dataset.tab === 'mapa') initTravelMap();
-    if (btn.dataset.tab === 'finances') initFinanceMap();
   });
 });
 
@@ -713,6 +722,7 @@ function renderDocuments() {
 }
 
 let currentOrdersImport = null;
+let currentOrdersRaw = null;
 
 async function handleViewDoc(docId) {
   const doc = documents.find((d) => d.id === docId);
@@ -739,6 +749,7 @@ async function handleViewDoc(docId) {
             </tr>
           `).join('');
         currentOrdersImport = aggregateOrdersToHoldings(orders);
+        currentOrdersRaw = orders;
         importBtn.hidden = false;
         importBtn.textContent = `Actualitza actius (${currentOrdersImport.length} fons)`;
       } else if (kind === 'plusvalues') {
@@ -754,12 +765,14 @@ async function handleViewDoc(docId) {
             </tr>
           `).join('');
         currentOrdersImport = null;
+        currentOrdersRaw = null;
         importBtn.hidden = true;
       } else {
         document.getElementById('csv-preview-table').innerHTML = rows.slice(0, 30).map((row, i) =>
           `<tr>${row.map((cell) => `<${i === 0 ? 'th' : 'td'}>${cell}</${i === 0 ? 'th' : 'td'}>`).join('')}</tr>`
         ).join('');
         currentOrdersImport = null;
+        currentOrdersRaw = null;
         importBtn.hidden = true;
       }
       csvPreviewModal.hidden = false;
@@ -777,8 +790,13 @@ document.getElementById('csv-import-btn').addEventListener('click', async () => 
   try {
     await upsertHoldingsFromOrders(currentOrdersImport, holdings);
     holdings = await fetchHoldings();
+    if (currentOrdersRaw) {
+      await bulkUpsertOrders(ordersToOrderRows(currentOrdersRaw));
+      holdingOrders = await fetchOrders();
+    }
     renderHoldings();
-    renderDiversification();
+    renderFinanceSummary();
+    renderFinanceMap();
     showToast('Actius actualitzats des del document.');
     csvPreviewModal.hidden = true;
   } catch (err) {
@@ -819,12 +837,15 @@ docForm.addEventListener('submit', async (e) => {
       const text = await file.text();
       const rows = parseCsv(text);
       if (detectCsvKind(rows) === 'ordres') {
-        const orders = parseOrdersRows(rows);
-        const aggregated = aggregateOrdersToHoldings(orders);
+        const parsedOrders = parseOrdersRows(rows);
+        const aggregated = aggregateOrdersToHoldings(parsedOrders);
         const updated = await upsertHoldingsFromOrders(aggregated, holdings);
         updated.forEach((h) => replaceInArray(holdings, h));
+        await bulkUpsertOrders(ordersToOrderRows(parsedOrders));
+        holdingOrders = await fetchOrders();
         renderHoldings();
-        renderFinanceStats();
+        renderFinanceSummary();
+        renderFinanceMap();
         const names = updated.map((h) => h.ticker).join(', ');
         showToast(`Detectat automaticament: actualitzats ${updated.length} actius (${names}).`);
       }
@@ -899,7 +920,7 @@ async function handleSetPrice(id, price) {
   try {
     const updated = await setCurrentPrice(id, price);
     replaceInArray(holdings, updated);
-    renderFinanceStats();
+    renderFinanceSummary();
     showToast('Preu actualitzat.');
   } catch (err) {
     showToast('No s\'ha pogut desar el preu: ' + err.message, true);
@@ -918,7 +939,7 @@ async function handleDeleteHolding(id) {
     holdings = holdings.filter((h) => h.id !== id);
     allocations = allocations.filter((a) => a.holding_id !== id);
     renderHoldings();
-    renderFinanceStats();
+    renderFinanceSummary();
     renderFinanceMap();
   } catch (err) {
     showToast('No s\'ha pogut eliminar: ' + err.message, true);
@@ -945,7 +966,7 @@ holdingForm.addEventListener('submit', async (e) => {
     holdings.push(created);
     holdingModal.hidden = true;
     renderHoldings();
-    renderFinanceStats();
+    renderFinanceSummary();
   } catch (err) {
     showToast('No s\'ha pogut desar l\'actiu: ' + err.message, true);
   }
@@ -1029,17 +1050,216 @@ function holdingValue(h) {
   return h.quantity * (h.current_price ?? h.avg_cost ?? 0);
 }
 
-function renderFinanceStats() {
+const FINANCE_SUBTABS = [
+  { key: 'resum', label: 'Resum' },
+  { key: 'cartera', label: 'Cartera' },
+  { key: 'projeccio', label: 'Projecció' },
+  { key: 'documents', label: 'Documents' },
+];
+
+function renderFinanceSubtabs() {
+  const nav = document.getElementById('finance-subtabs');
+  nav.innerHTML = FINANCE_SUBTABS.map((t) =>
+    `<button type="button" data-fintab="${t.key}" class="${t.key === financeSubtab ? 'active' : ''}">${t.label}</button>`
+  ).join('');
+  nav.querySelectorAll('button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      financeSubtab = btn.dataset.fintab;
+      applyFinanceSubtab();
+    });
+  });
+}
+
+function applyFinanceSubtab() {
+  document.querySelectorAll('#finance-subtabs button').forEach((b) =>
+    b.classList.toggle('active', b.dataset.fintab === financeSubtab)
+  );
+  document.querySelectorAll('.finance-subpanel').forEach((p) => { p.hidden = true; });
+  document.getElementById('finance-panel-' + financeSubtab).hidden = false;
+  if (financeSubtab === 'cartera') initFinanceMap();
+}
+
+function renderFinanceSummary() {
   const invested = holdings.reduce((s, h) => s + h.quantity * (h.avg_cost || 0), 0);
   const current = holdings.reduce((s, h) => s + holdingValue(h), 0);
-  const gain = current - invested;
-  document.getElementById('stat-invested').textContent = invested.toFixed(0) + ' €';
+
+  portfolioHistory = (msciSeries && msciSeries.length)
+    ? computePortfolioHistory({ orders: holdingOrders, msciSeries, snapshots, currentValue: current })
+    : null;
+
+  const shownInvested = portfolioHistory ? portfolioHistory.today.contributed : invested;
+  const gain = current - shownInvested;
+
   document.getElementById('stat-current-value').textContent = current.toFixed(0) + ' €';
+  document.getElementById('stat-invested').textContent = shownInvested.toFixed(0) + ' €';
   const gainEl = document.getElementById('stat-gain');
   gainEl.textContent = (gain >= 0 ? '+' : '') + gain.toFixed(0) + ' €';
   gainEl.className = 'value ' + (gain >= 0 ? 'result-positive' : 'result-negative');
-  document.getElementById('proj-start').value = current > 0 ? current.toFixed(2) : invested.toFixed(2);
+
+  const vsMsciEl = document.getElementById('stat-vs-msci');
+  if (portfolioHistory && portfolioHistory.today.diffPct != null) {
+    const { diffAbs, diffPct } = portfolioHistory.today;
+    vsMsciEl.textContent = `${diffAbs >= 0 ? '+' : ''}${diffAbs.toFixed(0)} € (${diffPct >= 0 ? '+' : ''}${diffPct.toFixed(1)}%)`;
+    vsMsciEl.className = 'value ' + (diffAbs >= 0 ? 'result-positive' : 'result-negative');
+  } else {
+    vsMsciEl.textContent = '-';
+    vsMsciEl.className = 'value';
+  }
+
+  document.getElementById('proj-start').value = current > 0 ? current.toFixed(2) : shownInvested.toFixed(2);
+
+  if (portfolioHistory) {
+    renderHistoryChart(portfolioHistory);
+    if (current > 0) upsertSnapshotToday(current, portfolioHistory.today.contributed).catch(() => {});
+  } else {
+    document.getElementById('history-chart-wrap').hidden = true;
+    document.getElementById('history-empty').hidden = false;
+  }
 }
+
+function renderHistoryChart(history) {
+  document.getElementById('history-empty').hidden = true;
+  document.getElementById('history-chart-wrap').hidden = false;
+  const container = document.getElementById('history-chart');
+
+  const width = 680;
+  const height = 320;
+  const padL = 55;
+  const padR = 16;
+  const padT = 16;
+  const padB = 30;
+  const plotW = width - padL - padR;
+  const plotH = height - padT - padB;
+
+  const points = history.points;
+  const actualPoints = history.snapshots
+    .concat([{ date: history.today.date, actualValue: history.today.actualValue }])
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .filter((p, i, arr) => i === arr.length - 1 || p.date !== arr[i + 1].date);
+
+  const minT = new Date(points[0].date).getTime();
+  const maxT = new Date(history.today.date).getTime();
+  const span = Math.max(1, maxT - minT);
+  const xFor = (dateStr) => padL + ((new Date(dateStr).getTime() - minT) / span) * plotW;
+
+  const maxValue = Math.max(
+    ...points.map((p) => Math.max(p.contributed, p.msciValue)),
+    ...actualPoints.map((p) => p.actualValue),
+    1
+  );
+  const yFor = (v) => padT + plotH - (v / maxValue) * plotH;
+
+  const contributedPts = points.map((p) => `${xFor(p.date)},${yFor(p.contributed)}`).join(' ');
+  const msciPts = points.map((p) => `${xFor(p.date)},${yFor(p.msciValue)}`).join(' ');
+  const actualPts = actualPoints.map((p) => `${xFor(p.date)},${yFor(p.actualValue)}`).join(' ');
+
+  const ySteps = 4;
+  const yGridlines = Array.from({ length: ySteps + 1 }, (_, i) => {
+    const v = (maxValue / ySteps) * i;
+    return `<line class="chart-axis-line" x1="${padL}" y1="${yFor(v)}" x2="${width - padR}" y2="${yFor(v)}"></line>
+      <text class="chart-axis-label" x="${padL - 8}" y="${yFor(v) + 3}" text-anchor="end">${formatCompactEur(v)}</text>`;
+  }).join('');
+
+  const tickCount = 5;
+  const xLabels = Array.from({ length: tickCount }, (_, i) => {
+    const t = minT + (span / (tickCount - 1)) * i;
+    const label = new Date(t).toLocaleDateString('ca-ES', { month: 'short', year: 'numeric' });
+    return `<text class="chart-axis-label" x="${padL + (plotW / (tickCount - 1)) * i}" y="${height - padB + 16}" text-anchor="middle">${label}</text>`;
+  }).join('');
+
+  const actualDotX = xFor(history.today.date);
+  const actualDotY = yFor(history.today.actualValue);
+
+  container.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" width="100%" style="display:block">
+      ${yGridlines}
+      <polyline class="chart-contributed-line" points="${contributedPts}"></polyline>
+      <polyline class="chart-msci-line" points="${msciPts}"></polyline>
+      ${actualPoints.length > 1 ? `<polyline class="chart-actual-line" points="${actualPts}"></polyline>` : ''}
+      <circle class="chart-actual-dot" cx="${actualDotX}" cy="${actualDotY}" r="5"></circle>
+      ${xLabels}
+      <line class="chart-axis-line" x1="${padL}" y1="${padT + plotH}" x2="${width - padR}" y2="${padT + plotH}"></line>
+      <g id="hist-hover-group" style="display:none">
+        <line class="chart-crosshair" id="hist-crosshair" y1="${padT}" y2="${padT + plotH}"></line>
+        <circle class="chart-hover-dot muted" id="hist-dot-contrib" r="4"></circle>
+        <circle class="chart-hover-dot msci" id="hist-dot-msci" r="4"></circle>
+      </g>
+      <rect id="hist-hover-target" x="${padL}" y="${padT}" width="${plotW}" height="${plotH}" fill="transparent"></rect>
+    </svg>
+  `;
+
+  const svg = container.querySelector('svg');
+  const hoverGroup = document.getElementById('hist-hover-group');
+  const crosshair = document.getElementById('hist-crosshair');
+  const dotContrib = document.getElementById('hist-dot-contrib');
+  const dotMsci = document.getElementById('hist-dot-msci');
+  const target = document.getElementById('hist-hover-target');
+  const tooltip = document.getElementById('history-tooltip');
+
+  target.addEventListener('mousemove', (e) => {
+    const rect = svg.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) * (width / rect.width);
+    const tAtMouse = minT + ((mouseX - padL) / plotW) * span;
+    let idx = 0;
+    let bestDiff = Infinity;
+    points.forEach((p, i) => {
+      const diff = Math.abs(new Date(p.date).getTime() - tAtMouse);
+      if (diff < bestDiff) { bestDiff = diff; idx = i; }
+    });
+    const p = points[idx];
+    const cx = xFor(p.date);
+
+    hoverGroup.style.display = '';
+    crosshair.setAttribute('x1', cx);
+    crosshair.setAttribute('x2', cx);
+    dotContrib.setAttribute('cx', cx);
+    dotContrib.setAttribute('cy', yFor(p.contributed));
+    dotMsci.setAttribute('cx', cx);
+    dotMsci.setAttribute('cy', yFor(p.msciValue));
+
+    tooltip.innerHTML = `
+      <div class="tt-year">${new Date(p.date).toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' })}</div>
+      <div class="tt-row"><span>Aportat</span><span>${formatEur(p.contributed)}</span></div>
+      <div class="tt-row"><span>MSCI World (hipotètic)</span><span>${formatEur(p.msciValue)}</span></div>
+    `;
+    tooltip.classList.add('visible');
+    const containerRect = container.getBoundingClientRect();
+    const ttLeft = (cx / width) * containerRect.width;
+    tooltip.style.left = Math.min(Math.max(ttLeft - 70, 0), containerRect.width - 180) + 'px';
+    tooltip.style.top = '0px';
+  });
+
+  target.addEventListener('mouseleave', () => {
+    hoverGroup.style.display = 'none';
+    tooltip.classList.remove('visible');
+  });
+}
+
+async function handleRebuildHistory() {
+  const csvDocs = documents.filter((d) => d.file_type === 'csv');
+  if (!csvDocs.length) {
+    showToast('No hi ha cap CSV pujat encara. Puja\'l a "Documents".', true);
+    return;
+  }
+  try {
+    let rowCount = 0;
+    for (const doc of csvDocs) {
+      const text = await fetchDocText(doc.file_path);
+      const rows = parseCsv(text);
+      if (detectCsvKind(rows) !== 'ordres') continue;
+      const orderRows = ordersToOrderRows(parseOrdersRows(rows));
+      await bulkUpsertOrders(orderRows);
+      rowCount += orderRows.length;
+    }
+    holdingOrders = await fetchOrders();
+    renderFinanceSummary();
+    showToast(rowCount ? `Historial reconstruit: ${rowCount} operacions.` : 'No s\'ha trobat cap CSV d\'ordres entre els documents.');
+  } catch (err) {
+    showToast('No s\'ha pogut reconstruir l\'historial: ' + err.message, true);
+  }
+}
+
+document.getElementById('rebuild-history-btn').addEventListener('click', handleRebuildHistory);
 
 function countryFillColor(pct) {
   if (pct <= 0) return '#1f2620';
@@ -1215,9 +1435,10 @@ document.getElementById('projection-form').addEventListener('submit', (e) => {
 });
 
 function renderFinances() {
+  renderFinanceSubtabs();
   renderDocuments();
   renderHoldings();
-  renderFinanceStats();
+  renderFinanceSummary();
 }
 
 /* Llista de la compra */

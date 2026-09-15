@@ -248,3 +248,125 @@ export async function upsertHoldingsFromOrders(aggregated, existingHoldings) {
   }
   return results;
 }
+
+/**
+ * El CSV d'ordres de MyInvestor porta la data en format DD/MM/YYYY.
+ */
+function normalizeOrderDate(raw) {
+  if (!raw) return null;
+  const m = raw.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+}
+
+export function ordersToOrderRows(orders) {
+  return orders
+    .filter((o) => o.status === 'Finalizada' && o.units && o.amount)
+    .map((o) => ({ isin: o.isin, order_date: normalizeOrderDate(o.date), amount: o.amount, units: o.units }))
+    .filter((o) => o.order_date);
+}
+
+export async function fetchOrders() {
+  const { data, error } = await supabase.from('holding_orders').select('*').order('order_date');
+  if (error) throw error;
+  return data;
+}
+
+export async function bulkUpsertOrders(rows) {
+  if (!rows.length) return [];
+  const { data, error } = await supabase.from('holding_orders')
+    .upsert(rows, { onConflict: 'isin,order_date,amount,units', ignoreDuplicates: true })
+    .select();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchSnapshots() {
+  const { data, error } = await supabase.from('portfolio_snapshots').select('*').order('snapshot_date');
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertSnapshotToday(totalValue, totalContributed) {
+  const today = new Date().toISOString().slice(0, 10);
+  const { data, error } = await supabase.from('portfolio_snapshots')
+    .upsert({ snapshot_date: today, total_value: totalValue, total_contributed: totalContributed }, { onConflict: 'snapshot_date' })
+    .select().single();
+  if (error) throw error;
+  return data;
+}
+
+let msciCache = null;
+export async function loadMsciWorldSeries() {
+  if (msciCache) return msciCache;
+  const res = await fetch('data/msci-world-eur.json');
+  if (!res.ok) throw new Error('no es pot carregar data/msci-world-eur.json');
+  msciCache = await res.json();
+  return msciCache;
+}
+
+/**
+ * Compara la cartera real amb un MSCI World hipotetic: per cada ordre
+ * finalitzada, calcula quantes "participacions" de MSCI World (en EUR)
+ * hauries comprat aquell dia amb el mateix import, i segueix el seu valor
+ * fins avui amb la serie historica de data/msci-world-eur.json (basada en
+ * l'ETF iShares Core MSCI World, URTH, convertit a EUR).
+ */
+export function computePortfolioHistory({ orders, msciSeries, snapshots, currentValue }) {
+  const validOrders = orders
+    .filter((o) => o.order_date && o.amount)
+    .slice()
+    .sort((a, b) => a.order_date.localeCompare(b.order_date));
+  if (!validOrders.length || !msciSeries.length) return null;
+
+  function msciPriceAt(date) {
+    let best = msciSeries[0];
+    for (const p of msciSeries) {
+      if (p.date <= date) best = p; else break;
+    }
+    return best.eur;
+  }
+
+  const withUnits = validOrders.map((o) => ({ ...o, msciUnits: o.amount / msciPriceAt(o.order_date) }));
+  const firstDate = validOrders[0].order_date;
+  const today = new Date().toISOString().slice(0, 10);
+  const timeline = msciSeries.filter((p) => p.date >= firstDate);
+
+  let oi = 0;
+  let runningContributed = 0;
+  let runningUnits = 0;
+  const points = timeline.map((p) => {
+    while (oi < withUnits.length && withUnits[oi].order_date <= p.date) {
+      runningContributed += withUnits[oi].amount;
+      runningUnits += withUnits[oi].msciUnits;
+      oi++;
+    }
+    return { date: p.date, contributed: runningContributed, msciValue: runningUnits * p.eur };
+  });
+  while (oi < withUnits.length) {
+    runningContributed += withUnits[oi].amount;
+    runningUnits += withUnits[oi].msciUnits;
+    oi++;
+  }
+  const lastPrice = msciSeries[msciSeries.length - 1].eur;
+  const finalPoint = { date: today, contributed: runningContributed, msciValue: runningUnits * lastPrice };
+  if (!points.length || points[points.length - 1].date < today) points.push(finalPoint);
+  else points[points.length - 1] = finalPoint;
+
+  const totalContributed = runningContributed;
+  const totalMsciValue = runningUnits * lastPrice;
+
+  return {
+    points,
+    snapshots: (snapshots || []).map((s) => ({ date: s.snapshot_date, actualValue: Number(s.total_value) })),
+    today: {
+      date: today,
+      contributed: totalContributed,
+      msciValue: totalMsciValue,
+      actualValue: currentValue,
+      diffAbs: currentValue - totalMsciValue,
+      diffPct: totalMsciValue > 0 ? ((currentValue - totalMsciValue) / totalMsciValue) * 100 : null,
+    },
+  };
+}

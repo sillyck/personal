@@ -71,77 +71,108 @@
 
     <section id="tab-finances" class="tab-panel" hidden>
       <p class="map-intro">Nomes tu (Jordi) hi tens accés. Documents guardats de manera privada; els actius els introdueixes a mà.</p>
+      <nav class="subtabs" id="finance-subtabs"></nav>
 
-      <div class="panel-header">
-        <h2 class="section-title">Documents</h2>
-        <button id="new-doc-btn" class="primary-btn">+ Puja document</button>
-      </div>
-      <div class="doc-grid" id="doc-grid"></div>
-
-      <div class="panel-header section-spaced">
-        <h2 class="section-title">Actius</h2>
-        <button id="new-holding-btn" class="primary-btn">+ Afegeix actiu</button>
-      </div>
-      <p class="map-intro">El preu actual l'actualitzes tu quan el consultis: no hi ha cap font gratuïta fiable de preus per ISIN per a fons indexats (ni MyInvestor ni Finect obren les seves dades). Si no el poses, es fa servir el preu de compra.</p>
-      <div class="holdings-table-wrap">
-        <table class="holdings-table" id="holdings-table"></table>
-      </div>
-
-      <div class="finance-stats-row section-spaced">
-        <div class="stat-card">
-          <div class="value" id="stat-invested">-</div>
-          <div class="label">Aportat</div>
+      <div id="finance-panel-resum" class="finance-subpanel">
+        <div class="finance-stats-row">
+          <div class="stat-card">
+            <div class="value" id="stat-current-value">-</div>
+            <div class="label">Valor actual</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="stat-invested">-</div>
+            <div class="label">Aportat</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="stat-gain">-</div>
+            <div class="label">Guany / pèrdua</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="stat-vs-msci">-</div>
+            <div class="label">Davant del MSCI World</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="value" id="stat-current-value">-</div>
-          <div class="label">Valor actual</div>
+
+        <div class="panel-header section-spaced">
+          <h2 class="section-title">Evolució: la teva cartera davant del MSCI World</h2>
+          <button type="button" id="rebuild-history-btn" class="ghost-btn">Reconstrueix historial</button>
         </div>
-        <div class="stat-card">
-          <div class="value" id="stat-gain">-</div>
-          <div class="label">Guany / pèrdua</div>
+        <p class="map-intro" id="history-explain">Cada vegada que fas una aportació, mirem que hauria valgut avui aquell mateix import invertit en un fons indexat MSCI World (ETF iShares Core MSCI World, convertit a euros). Aixi es compara amb el que tens realment, no nomes amb el que has posat.</p>
+        <div id="history-empty" class="stat-card" hidden>
+          <p class="empty-col">Encara no hi ha prou dades per comparar. Puja els extractes d'ordres (CSV) a "Documents", o si ja n'hi ha, prem "Reconstrueix historial".</p>
+        </div>
+        <div class="chart-wrap section-spaced" id="history-chart-wrap" hidden>
+          <div class="chart-legend">
+            <span class="chart-legend-item"><span class="chart-legend-swatch contributed"></span>Aportat</span>
+            <span class="chart-legend-item"><span class="chart-legend-swatch msci"></span>MSCI World (hipotètic)</span>
+            <span class="chart-legend-item"><span class="chart-legend-swatch actual"></span>Valor real</span>
+          </div>
+          <div id="history-chart"></div>
+          <div class="chart-tooltip" id="history-tooltip"></div>
         </div>
       </div>
 
-      <div class="panel-header section-spaced">
-        <h2 class="section-title">Distribució geogràfica</h2>
-      </div>
-      <p class="map-intro">Percentatge per país de cada fons (l'introdueixes tu des del factsheet, amb el botó "Països" de cada actiu); es pondera pel que tens invertit a cada fons.</p>
-      <div id="finance-map"></div>
+      <div id="finance-panel-cartera" class="finance-subpanel" hidden>
+        <div class="panel-header">
+          <h2 class="section-title">Actius</h2>
+          <button id="new-holding-btn" class="primary-btn">+ Afegeix actiu</button>
+        </div>
+        <p class="map-intro">El preu actual l'actualitzes tu quan el consultis: no hi ha cap font gratuïta fiable de preus per ISIN per a fons indexats (ni MyInvestor ni Finect obren les seves dades). Si no el poses, es fa servir el preu de compra.</p>
+        <div class="holdings-table-wrap">
+          <table class="holdings-table" id="holdings-table"></table>
+        </div>
 
-      <div class="panel-header section-spaced">
-        <h2 class="section-title">Projecció</h2>
+        <div class="panel-header section-spaced">
+          <h2 class="section-title">Distribució geogràfica</h2>
+        </div>
+        <p class="map-intro">Percentatge per país de cada fons (l'introdueixes tu des del factsheet, amb el botó "Països" de cada actiu); es pondera pel que tens invertit a cada fons.</p>
+        <div id="finance-map"></div>
       </div>
-      <p class="map-intro">Calculadora amb els supòsits que hi posis. No és una predicció ni un consell d'inversió, només matemàtica d'interès compost.</p>
-      <form id="projection-form" class="projection-form">
-        <label>Valor de partida (€)
-          <input type="number" step="any" id="proj-start" required>
-        </label>
-        <label>Aportació mensual actual (€)
-          <input type="number" step="any" id="proj-monthly" required value="350">
-        </label>
-        <label>Rendiment anual assumit (%)
-          <input type="number" step="any" id="proj-return" required value="6">
-        </label>
-        <label class="checkbox-label">
-          <input type="checkbox" id="proj-bump-enable"> Augmentar l'aportació a partir d'una data
-        </label>
-        <div id="proj-bump-fields" hidden>
-          <label>A partir de
-            <input type="date" id="proj-bump-date">
+
+      <div id="finance-panel-projeccio" class="finance-subpanel" hidden>
+        <div class="panel-header">
+          <h2 class="section-title">Simulador: que passaria si...</h2>
+        </div>
+        <p class="map-intro">Calculadora amb els supòsits que hi posis, de cara al futur. No és una predicció ni un consell d'inversió, només matemàtica d'interès compost; no té relació amb l'evolució real de dalt.</p>
+        <form id="projection-form" class="projection-form">
+          <label>Valor de partida (€)
+            <input type="number" step="any" id="proj-start" required>
           </label>
-          <label>Nova aportació mensual (€)
-            <input type="number" step="any" id="proj-bump-amount">
+          <label>Aportació mensual actual (€)
+            <input type="number" step="any" id="proj-monthly" required value="350">
           </label>
+          <label>Rendiment anual assumit (%)
+            <input type="number" step="any" id="proj-return" required value="6">
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="proj-bump-enable"> Augmentar l'aportació a partir d'una data
+          </label>
+          <div id="proj-bump-fields" hidden>
+            <label>A partir de
+              <input type="date" id="proj-bump-date">
+            </label>
+            <label>Nova aportació mensual (€)
+              <input type="number" step="any" id="proj-bump-amount">
+            </label>
+          </div>
+          <button type="submit" class="primary-btn">Calcula</button>
+        </form>
+        <div class="chart-wrap section-spaced" id="projection-chart-wrap" hidden>
+          <div class="chart-legend">
+            <span class="chart-legend-item"><span class="chart-legend-swatch value"></span>Valor total</span>
+            <span class="chart-legend-item"><span class="chart-legend-swatch contributed"></span>Aportat</span>
+          </div>
+          <div id="projection-chart"></div>
+          <div class="chart-tooltip" id="projection-tooltip"></div>
         </div>
-        <button type="submit" class="primary-btn">Calcula</button>
-      </form>
-      <div class="chart-wrap section-spaced" id="projection-chart-wrap" hidden>
-        <div class="chart-legend">
-          <span class="chart-legend-item"><span class="chart-legend-swatch value"></span>Valor total</span>
-          <span class="chart-legend-item"><span class="chart-legend-swatch contributed"></span>Aportat</span>
+      </div>
+
+      <div id="finance-panel-documents" class="finance-subpanel" hidden>
+        <div class="panel-header">
+          <h2 class="section-title">Documents</h2>
+          <button id="new-doc-btn" class="primary-btn">+ Puja document</button>
         </div>
-        <div id="projection-chart"></div>
-        <div class="chart-tooltip" id="projection-tooltip"></div>
+        <div class="doc-grid" id="doc-grid"></div>
       </div>
     </section>
 

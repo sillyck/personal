@@ -495,6 +495,8 @@ input:focus, select:focus, button:focus-visible {
 
 .finance-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
 
+.finance-subpanel[hidden] { display: none; }
+
 #finance-map { height: 380px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
 
 .projection-form {
@@ -527,14 +529,22 @@ input:focus, select:focus, button:focus-visible {
 .chart-legend-swatch { width: 10px; height: 10px; border-radius: 2px; }
 .chart-legend-swatch.value { background: var(--green-strong); }
 .chart-legend-swatch.contributed { background: var(--text-muted); }
+.chart-legend-swatch.msci { background: var(--amber); }
+.chart-legend-swatch.actual { background: var(--green-strong); }
 
 .chart-value-area { fill: var(--green-strong); fill-opacity: 0.22; }
 .chart-value-line { fill: none; stroke: var(--green-strong); stroke-width: 2.5; }
 .chart-contributed-line { fill: none; stroke: var(--text-muted); stroke-width: 2; stroke-dasharray: 4 3; }
+.chart-msci-line { fill: none; stroke: var(--amber); stroke-width: 2.5; }
+.chart-actual-line { fill: none; stroke: var(--green-strong); stroke-width: 2.5; }
+.chart-actual-dot { fill: var(--green-strong); stroke: var(--surface); stroke-width: 2; }
+.chart-actual-label { fill: var(--green-strong); font-size: 11px; font-weight: 600; }
 .chart-axis-line { stroke: var(--border); stroke-width: 1; }
 .chart-axis-label { fill: var(--text-muted); font-size: 10px; }
 .chart-crosshair { stroke: var(--border); stroke-width: 1; }
 .chart-hover-dot { fill: var(--green-strong); stroke: var(--surface); stroke-width: 2; }
+.chart-hover-dot.msci { fill: var(--amber); }
+.chart-hover-dot.muted { fill: var(--text-muted); }
 
 .chart-tooltip {
   position: absolute;
