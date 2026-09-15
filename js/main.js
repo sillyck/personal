@@ -1,9 +1,10 @@
 import { supabase, supabaseReady } from './supabaseClient.js';
 import { signIn, signOut, getSession, onAuthChange } from './auth.js';
 import {
-  WEEKDAY_LABELS, FREQUENCY_LABELS, CATEGORIES, EFFORTS, STATUS_ORDER, STATUS_LABELS,
+  WEEKDAY_LABELS, FREQUENCY_LABELS, FREQUENCY_PHRASES, FREQUENCY_ORDER, CATEGORIES, EFFORTS,
+  STATUS_ORDER, STATUS_LABELS,
   fetchRooms, fetchTasks, createTask, updateTask, deleteTask, markTaskDone, fetchCompletions,
-  dueInfo, effectiveStatus, setTaskStatus,
+  dueInfo, priorityInfo, effectiveStatus, setTaskStatus,
 } from './tasks.js';
 import { PROACTIVE_CATEGORIES, fetchProactiveContent } from './proactive.js';
 import { computeStats } from './stats.js';
@@ -145,7 +146,12 @@ function renderKanban() {
   `).join('');
 
   STATUS_ORDER.forEach((status) => {
-    const items = byStatus[status].sort((a, b) => dueInfo(a).diffDays - dueInfo(b).diffDays);
+    const items = byStatus[status].sort((a, b) => {
+      const pa = priorityInfo(dueInfo(a).diffDays).rank;
+      const pb = priorityInfo(dueInfo(b).diffDays).rank;
+      if (pa !== pb) return pa - pb;
+      return FREQUENCY_ORDER[a.frequency] - FREQUENCY_ORDER[b.frequency];
+    });
     const container = board.querySelector(`.kanban-cards[data-status="${status}"]`);
     container.innerHTML = items.length
       ? items.map((t) => taskCardHtml(t)).join('')
@@ -171,6 +177,7 @@ function renderKanban() {
 function taskCardHtml(task) {
   const roomName = task.rooms?.name || 'General';
   const info = dueInfo(task);
+  const priority = priorityInfo(info.diffDays);
   const status = effectiveStatus(task);
   return `
     <div class="task-card" draggable="true" data-id="${task.id}">
@@ -179,9 +186,12 @@ function taskCardHtml(task) {
         <span class="badge">${roomName}</span>
         <span class="badge">${task.category}</span>
         <span class="badge">${WEEKDAY_LABELS[task.weekday]}</span>
-        <span class="badge">${FREQUENCY_LABELS[task.frequency]}</span>
       </div>
-      <div class="due-info ${info.overdue ? 'overdue' : ''}">${info.label}</div>
+      <div class="priority-row">
+        <span class="priority priority-${priority.key}"><span class="priority-dot"></span>${priority.label}</span>
+        <span class="due-info ${info.overdue ? 'overdue' : ''}">${info.label}</span>
+      </div>
+      <div class="frequency-line">${FREQUENCY_PHRASES[task.frequency]}</div>
       ${status === 'bloquejat' && task.blocked_reason ? `<div class="blocked-note">${task.blocked_reason}</div>` : ''}
       <div class="task-card-actions">
         <select class="status-select" data-id="${task.id}" draggable="false" aria-label="Canvia l'estat">

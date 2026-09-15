@@ -12,6 +12,16 @@ export const FREQUENCY_LABELS = {
 export const CATEGORIES = ['Neteja', 'Vidres', 'Mobles', 'Manteniment', 'Ordre'];
 export const EFFORTS = ['baix', 'mitja', 'alt'];
 
+export const FREQUENCY_ORDER = { setmanal: 0, quinzenal: 1, mensual: 2, trimestral: 3, semestral: 4, anual: 5 };
+export const FREQUENCY_PHRASES = {
+  setmanal: 'Cada setmana',
+  quinzenal: 'Cada 15 dies',
+  mensual: 'Cada mes',
+  trimestral: 'Cada 3 mesos',
+  semestral: 'Cada 6 mesos',
+  anual: 'Cada any',
+};
+
 export const STATUS_ORDER = ['previst', 'pendent', 'en_proces', 'bloquejat', 'fet'];
 export const STATUS_LABELS = {
   previst: 'Previst',
@@ -62,17 +72,24 @@ export function dueInfo(task) {
   return { due, diffDays, label, overdue: diffDays < 0 };
 }
 
+export function priorityInfo(diffDays) {
+  if (diffDays < 0) return { rank: 0, key: 'urgent', label: 'Urgent' };
+  if (diffDays <= 1) return { rank: 1, key: 'alta', label: 'Alta' };
+  if (diffDays <= 7) return { rank: 2, key: 'normal', label: 'Normal' };
+  return { rank: 3, key: 'baixa', label: 'Baixa' };
+}
+
 /**
- * previst/pendent es recalculen sempre a partir de la data. en_proces i
- * bloquejat son manuals i no es toquen soles. fet es manual pero es desbloca
- * cap a pendent quan torna a tocar (mai es queda fet per sempre).
+ * previst i fet es desbloquegen sols cap a pendent quan torna a tocar (mai es
+ * queden per sempre). pendent, en_proces i bloquejat son manuals un cop
+ * fixats: nomes els mou un canvi d'estat explicit, no el pas del temps.
  */
 export function effectiveStatus(task) {
   const { diffDays } = dueInfo(task);
   const dueNow = diffDays <= 0;
-  if (task.status === 'en_proces' || task.status === 'bloquejat') return task.status;
+  if (task.status === 'previst') return dueNow ? 'pendent' : 'previst';
   if (task.status === 'fet') return dueNow ? 'pendent' : 'fet';
-  return dueNow ? 'pendent' : 'previst';
+  return task.status || (dueNow ? 'pendent' : 'previst');
 }
 
 export async function fetchRooms() {
