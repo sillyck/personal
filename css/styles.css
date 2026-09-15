@@ -162,6 +162,7 @@ input:focus, select:focus, button:focus-visible {
 }
 
 .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.filters input[type="search"] { min-width: 160px; }
 
 .kanban {
   display: grid;
@@ -210,6 +211,15 @@ input:focus, select:focus, button:focus-visible {
 }
 
 .kanban-cards.drag-over { background: var(--green-soft); }
+
+.room-group-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+.room-group-label:first-child { margin-top: 0; }
 
 .task-card {
   position: relative;
@@ -375,6 +385,8 @@ input:focus, select:focus, button:focus-visible {
 .stat-card .label { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
 
 .stat-card.wide { grid-column: 1 / -1; }
+
+.stat-note { font-size: 12px; color: var(--text-muted); margin: 10px 0 0; }
 
 .bar-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 13px; }
 .bar-row .name { width: 130px; color: var(--text-muted); flex-shrink: 0; }

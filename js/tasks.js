@@ -132,13 +132,13 @@ export async function fetchTasks() {
 }
 
 export async function createTask(task) {
-  const { data, error } = await supabase.from('tasks').insert(task).select().single();
+  const { data, error } = await supabase.from('tasks').insert(task).select('*, rooms(name)').single();
   if (error) throw error;
   return data;
 }
 
 export async function updateTask(id, fields) {
-  const { data, error } = await supabase.from('tasks').update(fields).eq('id', id).select().single();
+  const { data, error } = await supabase.from('tasks').update(fields).eq('id', id).select('*, rooms(name)').single();
   if (error) throw error;
   return data;
 }
@@ -150,30 +150,34 @@ export async function deleteTask(id) {
 
 export async function markTaskDone(task) {
   const today = new Date().toISOString().slice(0, 10);
-  const { error: e1 } = await supabase.from('task_completions').insert({ task_id: task.id, completed_at: today });
+  const { data: completion, error: e1 } = await supabase
+    .from('task_completions').insert({ task_id: task.id, completed_at: today }).select().single();
   if (e1) throw e1;
-  const { error: e2 } = await supabase.from('tasks').update({
+  const { data: updatedTask, error: e2 } = await supabase.from('tasks').update({
     last_completed_at: today,
     status: 'fet',
     blocked_reason: null,
     status_changed_at: new Date().toISOString(),
-  }).eq('id', task.id);
+  }).eq('id', task.id).select('*, rooms(name)').single();
   if (e2) throw e2;
+  completion.tasks = { title: updatedTask.title, room_id: updatedTask.room_id, assignee: updatedTask.assignee };
+  return { task: updatedTask, completion };
 }
 
 export async function setTaskStatus(taskId, status, reason = null) {
-  const { error } = await supabase.from('tasks').update({
+  const { data, error } = await supabase.from('tasks').update({
     status,
     blocked_reason: status === 'bloquejat' ? reason : null,
     status_changed_at: new Date().toISOString(),
-  }).eq('id', taskId);
+  }).eq('id', taskId).select('*, rooms(name)').single();
   if (error) throw error;
+  return data;
 }
 
 export async function fetchCompletions(sinceDate) {
   const { data, error } = await supabase
     .from('task_completions')
-    .select('*, tasks(title, room_id)')
+    .select('*, tasks(title, room_id, assignee)')
     .gte('completed_at', sinceDate);
   if (error) throw error;
   return data;

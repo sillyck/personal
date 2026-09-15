@@ -115,6 +115,13 @@ function populateFilterSelects() {
     EFFORTS.map((ef) => `<option value="${ef}">${ef}</option>`).join('');
 
   [roomSelect, catSelect, effortSelect].forEach((sel) => sel.addEventListener('change', renderKanban));
+  document.getElementById('filter-search').addEventListener('input', renderKanban);
+}
+
+function replaceTask(updated) {
+  const idx = tasks.findIndex((t) => t.id === updated.id);
+  if (idx !== -1) tasks[idx] = updated;
+  else tasks.push(updated);
 }
 
 /* Kanban rendering */
@@ -122,15 +129,42 @@ const blockedModal = document.getElementById('blocked-modal');
 const blockedForm = document.getElementById('blocked-form');
 let pendingBlockTaskId = null;
 
+function sortByPriority(items) {
+  return items.slice().sort((a, b) => {
+    const pa = priorityInfo(a).rank;
+    const pb = priorityInfo(b).rank;
+    if (pa !== pb) return pa - pb;
+    return a.interval_days - b.interval_days;
+  });
+}
+
+function groupByRoom(items) {
+  const groups = new Map();
+  const order = ['__general__', ...rooms.map((r) => r.id)];
+  items.forEach((t) => {
+    const key = t.room_id || '__general__';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(t);
+  });
+  return order
+    .filter((key) => groups.has(key))
+    .map((key) => ({
+      label: key === '__general__' ? 'General' : rooms.find((r) => r.id === key)?.name || '',
+      items: sortByPriority(groups.get(key)),
+    }));
+}
+
 function renderKanban() {
   const roomFilter = document.getElementById('filter-room').value;
   const categoryFilter = document.getElementById('filter-category').value;
   const effortFilter = document.getElementById('filter-effort').value;
+  const searchText = document.getElementById('filter-search').value.trim().toLowerCase();
 
   const filtered = tasks.filter((t) =>
     (!roomFilter || t.room_id === roomFilter) &&
     (!categoryFilter || t.category === categoryFilter) &&
-    (!effortFilter || t.effort === effortFilter)
+    (!effortFilter || t.effort === effortFilter) &&
+    (!searchText || t.title.toLowerCase().includes(searchText))
   );
 
   const byStatus = {};
@@ -146,15 +180,13 @@ function renderKanban() {
   `).join('');
 
   STATUS_ORDER.forEach((status) => {
-    const items = byStatus[status].sort((a, b) => {
-      const pa = priorityInfo(a).rank;
-      const pb = priorityInfo(b).rank;
-      if (pa !== pb) return pa - pb;
-      return a.interval_days - b.interval_days;
-    });
+    const groups = groupByRoom(byStatus[status]);
     const container = board.querySelector(`.kanban-cards[data-status="${status}"]`);
-    container.innerHTML = items.length
-      ? items.map((t) => taskCardHtml(t)).join('')
+    container.innerHTML = groups.length
+      ? groups.map((g) => `
+          <div class="room-group-label">${g.label}</div>
+          ${g.items.map((t) => taskCardHtml(t)).join('')}
+        `).join('')
       : '<p class="empty-col">Cap tasca</p>';
   });
 
@@ -251,8 +283,8 @@ async function applyStatusChange(taskId, newStatus) {
     return;
   }
   try {
-    await setTaskStatus(taskId, newStatus);
-    tasks = await fetchTasks();
+    const updated = await setTaskStatus(taskId, newStatus);
+    replaceTask(updated);
     renderKanban();
   } catch (err) {
     showToast('No s\'ha pogut canviar l\'estat: ' + err.message, true);
@@ -264,10 +296,10 @@ blockedForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const reason = document.getElementById('blocked-reason').value.trim();
   try {
-    await setTaskStatus(pendingBlockTaskId, 'bloquejat', reason);
+    const updated = await setTaskStatus(pendingBlockTaskId, 'bloquejat', reason);
+    replaceTask(updated);
     blockedModal.hidden = true;
     pendingBlockTaskId = null;
-    tasks = await fetchTasks();
     renderKanban();
   } catch (err) {
     showToast('No s\'ha pogut bloquejar: ' + err.message, true);
@@ -282,10 +314,9 @@ document.getElementById('blocked-cancel').addEventListener('click', () => {
 async function handleMarkDone(taskId) {
   const task = tasks.find((t) => t.id === taskId);
   try {
-    await markTaskDone(task);
-    const since = new Date();
-    since.setDate(since.getDate() - 30);
-    [tasks, completions] = await Promise.all([fetchTasks(), fetchCompletions(since.toISOString().slice(0, 10))]);
+    const { task: updated, completion } = await markTaskDone(task);
+    replaceTask(updated);
+    completions.push(completion);
     renderKanban();
     renderStats();
   } catch (err) {
@@ -298,7 +329,7 @@ async function handleDelete(taskId) {
   if (!confirm('Eliminar aquesta tasca?')) return;
   try {
     await deleteTask(taskId);
-    tasks = await fetchTasks();
+    tasks = tasks.filter((t) => t.id !== taskId);
     renderKanban();
   } catch (err) {
     showToast('No s\'ha pogut eliminar: ' + err.message, true);
@@ -392,13 +423,12 @@ taskForm.addEventListener('submit', async (e) => {
   };
   try {
     if (editingTaskId) {
-      await updateTask(editingTaskId, fields);
+      replaceTask(await updateTask(editingTaskId, fields));
     } else {
-      await createTask(fields);
+      tasks.push(await createTask(fields));
     }
     taskModal.hidden = true;
     editingTaskId = null;
-    tasks = await fetchTasks();
     renderKanban();
   } catch (err) {
     showToast('No s\'ha pogut desar la tasca: ' + err.message, true);
@@ -453,6 +483,17 @@ function renderStats() {
     <div class="stat-card">
       <div class="value">${stats.last30}</div>
       <div class="label">Fetes en 30 dies</div>
+    </div>
+    <div class="stat-card wide">
+      <div class="label" style="margin-bottom:10px;">Repartiment de feina (30 dies)</div>
+      ${stats.perAssignee.map((a) => `
+        <div class="bar-row">
+          <span class="name">${a.label}</span>
+          <span class="bar-track"><span class="bar-fill" style="width:${(a.count / stats.maxAssigneeCount) * 100}%"></span></span>
+          <span class="count">${a.count}</span>
+        </div>
+      `).join('')}
+      <p class="stat-note">Compta les tasques fetes assignades a cadascu (les d'"ambdos" sumen als dos). No distingeix qui les ha marcat, nomes a qui estaven assignades.</p>
     </div>
     <div class="stat-card wide">
       <div class="label" style="margin-bottom:10px;">Per habitacio (30 dies)</div>

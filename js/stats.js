@@ -17,6 +17,18 @@ export function computeStats(tasks, completions, rooms) {
   });
   const maxRoomCount = Math.max(1, ...perRoom.map((r) => r.count));
 
+  const perAssignee = [
+    { key: 'marta', label: 'Marta' },
+    { key: 'jordi', label: 'Jordi' },
+  ].map(({ key, label }) => {
+    const count = completions.filter((c) =>
+      new Date(c.completed_at) >= thirtyDaysAgo &&
+      (c.tasks?.assignee === key || c.tasks?.assignee === 'ambdos')
+    ).length;
+    return { label, count };
+  });
+  const maxAssigneeCount = Math.max(1, ...perAssignee.map((a) => a.count));
+
   return {
     totalTasks: tasks.length,
     overdueCount,
@@ -24,5 +36,7 @@ export function computeStats(tasks, completions, rooms) {
     last30,
     perRoom,
     maxRoomCount,
+    perAssignee,
+    maxAssigneeCount,
   };
 }
