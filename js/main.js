@@ -15,7 +15,10 @@ import {
   fetchHoldings, createHolding, deleteHolding, setCurrentPrice, updateHolding,
   fetchAllocations, addAllocation, deleteAllocation, projectGrowth,
 } from './finances.js';
-import { fetchShoppingList, addShoppingItem, toggleShoppingItem, deleteShoppingItem, clearCheckedItems } from './shopping.js';
+import {
+  SUPERMARKETS, SECTIONS, fetchShoppingList, addShoppingItem, updateShoppingItem, toggleShoppingItem,
+  deleteShoppingItem, clearCheckedItems, fetchItemPrices, addItemPrice, deleteItemPrice,
+} from './shopping.js';
 
 const loginView = document.getElementById('login-view');
 const appView = document.getElementById('app-view');
@@ -37,6 +40,7 @@ let documents = [];
 let holdings = [];
 let allocations = [];
 let shoppingItems = [];
+let itemPrices = [];
 let worldGeo = null;
 let financeMap = null;
 let financeCountryLayer = null;
@@ -98,7 +102,7 @@ if (!supabaseReady) {
 async function loadAll() {
   const since = new Date();
   since.setDate(since.getDate() - 30);
-  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa', 'documents financers', 'actius', 'llista de la compra', 'distribucio geografica'];
+  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa', 'documents financers', 'actius', 'llista de la compra', 'distribucio geografica', 'preus de la compra'];
   const results = await Promise.allSettled([
     fetchRooms(),
     fetchTasks(),
@@ -109,8 +113,9 @@ async function loadAll() {
     fetchHoldings(),
     fetchShoppingList(),
     fetchAllocations(),
+    fetchItemPrices(),
   ]);
-  [rooms, tasks, completions, proactiveContent, places, documents, holdings, shoppingItems, allocations] = results.map((r) =>
+  [rooms, tasks, completions, proactiveContent, places, documents, holdings, shoppingItems, allocations, itemPrices] = results.map((r) =>
     r.status === 'fulfilled' ? r.value : []
   );
   results.forEach((r, i) => {
@@ -120,6 +125,7 @@ async function loadAll() {
   });
   populateFilterSelects();
   populateTaskFormSelects();
+  populateShoppingFormSelects();
   renderKanban();
   renderProactive();
   renderStats();
@@ -1215,6 +1221,38 @@ function renderFinances() {
 }
 
 /* Llista de la compra */
+function populateShoppingFormSelects() {
+  document.getElementById('shopping-section').innerHTML =
+    '<option value="">Secció (opcional)</option>' + SECTIONS.map((s) => `<option value="${s}">${s}</option>`).join('');
+}
+
+document.getElementById('qty-minus').addEventListener('click', () => {
+  const input = document.getElementById('shopping-qty');
+  input.value = Math.max(0, Number(input.value || 0) - 1);
+});
+document.getElementById('qty-plus').addEventListener('click', () => {
+  const input = document.getElementById('shopping-qty');
+  input.value = Number(input.value || 0) + 1;
+});
+
+function formatQty(item) {
+  const q = Number(item.quantity);
+  const qtyStr = Number.isInteger(q) ? String(q) : String(q);
+  return item.unit ? `${qtyStr} ${item.unit}` : `x${qtyStr}`;
+}
+
+function itemRowHtml(item) {
+  return `
+    <label class="shopping-item ${item.checked ? 'checked' : ''}">
+      <input type="checkbox" data-shopping-id="${item.id}" ${item.checked ? 'checked' : ''}>
+      <span class="shopping-item-name">${item.item_name}</span>
+      <span class="badge">${formatQty(item)}</span>
+      ${item.note ? `<span class="shopping-item-note">${item.note}</span>` : ''}
+      <button type="button" class="ghost-btn" data-price-item="${item.id}">Preus</button>
+      <button type="button" class="delete-btn" data-shopping-delete="${item.id}">Elimina</button>
+    </label>`;
+}
+
 function renderShoppingList() {
   const list = document.getElementById('shopping-list');
   const pending = shoppingItems.filter((i) => !i.checked);
@@ -1225,28 +1263,53 @@ function renderShoppingList() {
     list.innerHTML = '<p class="empty-col">La llista esta buida.</p>';
     return;
   }
-  const itemRow = (item) => `
-    <label class="shopping-item ${item.checked ? 'checked' : ''}">
-      <input type="checkbox" data-shopping-id="${item.id}" ${item.checked ? 'checked' : ''}>
-      <span class="shopping-item-name">${item.item_name}</span>
-      ${item.note ? `<span class="shopping-item-note">${item.note}</span>` : ''}
-      <button type="button" class="delete-btn" data-shopping-delete="${item.id}">Elimina</button>
-    </label>`;
-  list.innerHTML = pending.map(itemRow).join('') + checked.map(itemRow).join('');
+
+  const bySuper = new Map();
+  pending.forEach((item) => {
+    const superKey = item.chosen_supermarket || 'Súper per triar';
+    if (!bySuper.has(superKey)) bySuper.set(superKey, new Map());
+    const bySection = bySuper.get(superKey);
+    const sectionKey = item.section || 'Sense secció';
+    if (!bySection.has(sectionKey)) bySection.set(sectionKey, []);
+    bySection.get(sectionKey).push(item);
+  });
+
+  let html = '';
+  for (const [superName, bySection] of bySuper) {
+    html += `<div class="shopping-group-title">${superName}</div>`;
+    for (const [sectionName, items] of bySection) {
+      html += `<div class="shopping-section-title">${sectionName}</div>`;
+      html += items.map(itemRowHtml).join('');
+    }
+  }
+  if (checked.length) {
+    html += `<div class="shopping-group-title">Marcats</div>` + checked.map(itemRowHtml).join('');
+  }
+  list.innerHTML = html;
 
   list.querySelectorAll('[data-shopping-id]').forEach((cb) =>
     cb.addEventListener('change', () => handleToggleShopping(cb.dataset.shoppingId, cb.checked))
   );
-  list.querySelectorAll('[data-shopping-delete]').forEach((btn) =>
-    btn.addEventListener('click', () => handleDeleteShopping(btn.dataset.shoppingDelete))
-  );
+  list.querySelectorAll('[data-shopping-delete]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      handleDeleteShopping(btn.dataset.shoppingDelete);
+    });
+  });
+  list.querySelectorAll('[data-price-item]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openPriceModal(btn.dataset.priceItem);
+    });
+  });
 }
 
 async function handleToggleShopping(id, checked) {
   try {
     const updated = await toggleShoppingItem(id, checked);
-    const idx = shoppingItems.findIndex((i) => i.id === id);
-    if (idx !== -1) shoppingItems[idx] = updated;
+    replaceInArray(shoppingItems, updated);
     renderShoppingList();
   } catch (err) {
     showToast('No s\'ha pogut actualitzar: ' + err.message, true);
@@ -1257,6 +1320,7 @@ async function handleDeleteShopping(id) {
   try {
     await deleteShoppingItem(id);
     shoppingItems = shoppingItems.filter((i) => i.id !== id);
+    itemPrices = itemPrices.filter((p) => p.shopping_item_id !== id);
     renderShoppingList();
   } catch (err) {
     showToast('No s\'ha pogut eliminar: ' + err.message, true);
@@ -1266,11 +1330,23 @@ async function handleDeleteShopping(id) {
 document.getElementById('shopping-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const itemInput = document.getElementById('shopping-item');
+  const qtyInput = document.getElementById('shopping-qty');
+  const unitInput = document.getElementById('shopping-unit');
+  const sectionSelect = document.getElementById('shopping-section');
   const noteInput = document.getElementById('shopping-note');
   try {
-    const created = await addShoppingItem(itemInput.value.trim(), noteInput.value.trim());
+    const created = await addShoppingItem({
+      item_name: itemInput.value.trim(),
+      quantity: Number(qtyInput.value || 1),
+      unit: unitInput.value.trim() || null,
+      section: sectionSelect.value || null,
+      note: noteInput.value.trim() || null,
+    });
     shoppingItems.push(created);
     itemInput.value = '';
+    qtyInput.value = '1';
+    unitInput.value = '';
+    sectionSelect.value = '';
     noteInput.value = '';
     itemInput.focus();
     renderShoppingList();
@@ -1283,10 +1359,91 @@ document.getElementById('shopping-clear-btn').addEventListener('click', async ()
   if (!shoppingItems.some((i) => i.checked)) return;
   try {
     await clearCheckedItems(shoppingItems);
+    const clearedIds = new Set(shoppingItems.filter((i) => i.checked).map((i) => i.id));
     shoppingItems = shoppingItems.filter((i) => !i.checked);
+    itemPrices = itemPrices.filter((p) => !clearedIds.has(p.shopping_item_id));
     renderShoppingList();
   } catch (err) {
     showToast('No s\'han pogut netejar: ' + err.message, true);
+  }
+});
+
+/* Preus per super */
+const priceModal = document.getElementById('price-modal');
+const priceForm = document.getElementById('price-form');
+let activePriceItemId = null;
+
+function openPriceModal(itemId) {
+  activePriceItemId = itemId;
+  const item = shoppingItems.find((i) => i.id === itemId);
+  document.getElementById('price-modal-title').textContent = `Preus: ${item.item_name}`;
+  document.getElementById('price-supermarket').innerHTML = SUPERMARKETS.map((s) => `<option value="${s}">${s}</option>`).join('');
+  renderPriceList();
+  priceForm.reset();
+  priceModal.hidden = false;
+}
+
+function renderPriceList() {
+  const el = document.getElementById('price-list');
+  const item = shoppingItems.find((i) => i.id === activePriceItemId);
+  const prices = itemPrices.filter((p) => p.shopping_item_id === activePriceItemId).sort((a, b) => a.price - b.price);
+  if (prices.length === 0) {
+    el.innerHTML = '<p class="empty-col">Encara no hi ha preus apuntats.</p>';
+    return;
+  }
+  el.innerHTML = prices.map((p, i) => `
+    <div class="place-item">
+      <div class="place-info">
+        <div class="place-name">${p.supermarket}${i === 0 ? ' <span class="badge">més barat</span>' : ''}</div>
+        <div class="place-date">${p.price.toFixed(2)} €</div>
+      </div>
+      <button type="button" class="ghost-btn" data-choose-super="${p.supermarket}">Compra aquí</button>
+      <button type="button" class="delete-btn" data-price-id="${p.id}">Elimina</button>
+    </div>
+  `).join('');
+  el.querySelectorAll('[data-choose-super]').forEach((btn) =>
+    btn.addEventListener('click', () => handleChooseSupermarket(btn.dataset.chooseSuper))
+  );
+  el.querySelectorAll('[data-price-id]').forEach((btn) =>
+    btn.addEventListener('click', () => handleDeletePrice(btn.dataset.priceId))
+  );
+}
+
+async function handleChooseSupermarket(supermarket) {
+  try {
+    const updated = await updateShoppingItem(activePriceItemId, { chosen_supermarket: supermarket });
+    replaceInArray(shoppingItems, updated);
+    renderShoppingList();
+    showToast(`Comprat marcat per fer-se a ${supermarket}.`);
+    priceModal.hidden = true;
+  } catch (err) {
+    showToast('No s\'ha pogut triar el súper: ' + err.message, true);
+  }
+}
+
+async function handleDeletePrice(id) {
+  try {
+    await deleteItemPrice(id);
+    itemPrices = itemPrices.filter((p) => p.id !== id);
+    renderPriceList();
+  } catch (err) {
+    showToast('No s\'ha pogut eliminar: ' + err.message, true);
+  }
+}
+
+document.getElementById('price-close').addEventListener('click', () => { priceModal.hidden = true; });
+
+priceForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const supermarket = document.getElementById('price-supermarket').value;
+  const price = Number(document.getElementById('price-amount').value);
+  try {
+    const created = await addItemPrice(activePriceItemId, supermarket, price);
+    itemPrices.push(created);
+    priceForm.reset();
+    renderPriceList();
+  } catch (err) {
+    showToast('No s\'ha pogut afegir el preu: ' + err.message, true);
   }
 });
 

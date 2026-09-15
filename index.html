@@ -148,7 +148,14 @@
     <section id="tab-compra" class="tab-panel" hidden>
       <form id="shopping-form" class="shopping-add-row">
         <input type="text" id="shopping-item" placeholder="Que cal comprar?" required>
-        <input type="text" id="shopping-note" placeholder="Nota (opcional): quantitat, marca...">
+        <span class="qty-stepper">
+          <button type="button" id="qty-minus" class="ghost-btn">-</button>
+          <input type="number" id="shopping-qty" value="1" min="0" step="any">
+          <button type="button" id="qty-plus" class="ghost-btn">+</button>
+        </span>
+        <input type="text" id="shopping-unit" placeholder="unitat (kg, L...)" class="unit-input">
+        <select id="shopping-section"></select>
+        <input type="text" id="shopping-note" placeholder="Nota (opcional)">
         <button type="submit" class="primary-btn">Afegeix</button>
       </form>
       <div class="panel-header">
@@ -312,6 +319,25 @@
       <div class="modal-actions">
         <button type="button" id="allocation-close" class="ghost-btn">Tanca</button>
         <button type="submit" class="primary-btn">Afegeix</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="price-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h2 id="price-modal-title">Preus</h2>
+    <div id="price-list"></div>
+    <form id="price-form">
+      <label>Súper
+        <select id="price-supermarket"></select>
+      </label>
+      <label>Preu (€)
+        <input type="number" step="any" min="0" id="price-amount" required>
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="price-close" class="ghost-btn">Tanca</button>
+        <button type="submit" class="primary-btn">Afegeix preu</button>
       </div>
     </form>
   </div>

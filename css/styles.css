@@ -566,8 +566,30 @@ input:focus, select:focus, button:focus-visible {
 .result-negative { color: var(--danger); }
 
 /* Llista de la compra */
-.shopping-add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
-.shopping-add-row input { flex: 1; min-width: 160px; }
+.shopping-add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
+.shopping-add-row input[type="text"] { flex: 1; min-width: 140px; }
+.shopping-add-row select { flex: 1; min-width: 140px; }
+.unit-input { max-width: 130px; flex: 0 1 130px !important; }
+
+.qty-stepper { display: flex; align-items: center; gap: 4px; }
+.qty-stepper input { width: 56px; text-align: center; }
+.qty-stepper button { width: 30px; padding: 8px 0; font-weight: 700; }
+
+.shopping-group-title {
+  font-family: var(--font-head);
+  font-size: 17px;
+  margin: 22px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.shopping-group-title:first-child { margin-top: 0; }
+.shopping-section-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  margin: 12px 0 6px;
+}
 
 .shopping-item {
   display: flex;
