@@ -126,11 +126,17 @@
     <h2 id="country-modal-title">País</h2>
     <div id="country-places-list"></div>
     <form id="place-form">
+      <label id="place-region-field" hidden>Regio
+        <select id="place-region"></select>
+      </label>
       <label>Nom del lloc (opcional)
         <input type="text" id="place-name" placeholder="Ex: Roma">
       </label>
-      <label>Data (opcional)
-        <input type="date" id="place-date">
+      <label>Des de quan
+        <input type="date" id="place-date-from" required>
+      </label>
+      <label>Fins quan (opcional)
+        <input type="date" id="place-date-to">
       </label>
       <label>Notes (opcional)
         <input type="text" id="place-notes">

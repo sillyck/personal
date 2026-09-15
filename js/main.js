@@ -483,11 +483,25 @@ function renderProactive() {
 const countryModal = document.getElementById('country-modal');
 const placeForm = document.getElementById('place-form');
 
+const SPAIN_REGIONS = [
+  'Andalusia', 'Aragó', 'Astúries', 'Illes Balears', 'Canàries', 'Cantàbria',
+  'Castella-La Manxa', 'Castella i Lleó', 'Catalunya', 'Comunitat Valenciana',
+  'Extremadura', 'Galícia', 'Madrid', 'Múrcia', 'Navarra', 'País Basc', 'La Rioja',
+  'Ceuta', 'Melilla',
+];
+
+const VISIT_COLOR_TIERS = ['#1f2620', '#4f6b57', '#6ea37e', '#8fc79c'];
+
+function visitCount(countryCode) {
+  return places.filter((p) => p.country_code === countryCode).length;
+}
+
 function countryStyle(feature) {
-  const visited = places.some((p) => p.country_code === feature.id);
+  const count = visitCount(feature.id);
+  const tier = Math.min(count, VISIT_COLOR_TIERS.length - 1);
   return {
-    fillColor: visited ? '#6ea37e' : '#1f2620',
-    fillOpacity: visited ? 0.85 : 1,
+    fillColor: VISIT_COLOR_TIERS[tier],
+    fillOpacity: count > 0 ? 0.85 : 1,
     color: '#2b332a',
     weight: 1,
   };
@@ -525,6 +539,17 @@ function openCountryModal(feature) {
   activeCountryFeature = feature;
   document.getElementById('country-modal-title').textContent = feature.properties.name;
   placeForm.reset();
+
+  const regionField = document.getElementById('place-region-field');
+  if (feature.id === 'ESP') {
+    document.getElementById('place-region').innerHTML =
+      '<option value="">Sense especificar</option>' +
+      SPAIN_REGIONS.map((r) => `<option value="${r}">${r}</option>`).join('');
+    regionField.hidden = false;
+  } else {
+    regionField.hidden = true;
+  }
+
   renderCountryPlaces();
   countryModal.hidden = false;
 }
@@ -536,17 +561,22 @@ function renderCountryPlaces() {
     list.innerHTML = '<p class="empty-col">Encara no hi ha cap lloc apuntat aqui.</p>';
     return;
   }
-  list.innerHTML = items.map((p) => `
+  list.innerHTML = items.map((p) => {
+    const dateRange = p.visited_to && p.visited_to !== p.visited_from
+      ? `${p.visited_from} → ${p.visited_to}`
+      : p.visited_from;
+    return `
     <div class="place-item">
       ${p.photo_path ? `<img src="${photoUrl(p.photo_path)}" class="place-photo" alt="">` : ''}
       <div class="place-info">
-        <div class="place-name">${p.place_name || 'Visitat'}</div>
-        ${p.visited_on ? `<div class="place-date">${p.visited_on}</div>` : ''}
+        <div class="place-name">${p.place_name || p.region_name || 'Visitat'}</div>
+        <div class="place-date">${dateRange}${p.region_name && p.place_name ? ` · ${p.region_name}` : ''}</div>
         ${p.notes ? `<div class="place-notes">${p.notes}</div>` : ''}
       </div>
       <button type="button" class="delete-btn" data-place-id="${p.id}">Elimina</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
   list.querySelectorAll('.delete-btn').forEach((btn) =>
     btn.addEventListener('click', () => handleDeletePlace(btn.dataset.placeId))
   );
@@ -575,8 +605,10 @@ placeForm.addEventListener('submit', async (e) => {
   const fields = {
     country_code: activeCountryFeature.id,
     country_name: activeCountryFeature.properties.name,
+    region_name: activeCountryFeature.id === 'ESP' ? (document.getElementById('place-region').value || null) : null,
     place_name: document.getElementById('place-name').value.trim() || null,
-    visited_on: document.getElementById('place-date').value || null,
+    visited_from: document.getElementById('place-date-from').value,
+    visited_to: document.getElementById('place-date-to').value || null,
     notes: document.getElementById('place-notes').value.trim() || null,
   };
   try {
