@@ -8,6 +8,7 @@ import {
 } from './tasks.js';
 import { PROACTIVE_CATEGORIES, fetchProactiveContent } from './proactive.js';
 import { computeStats } from './stats.js';
+import { fetchPlaces, createPlace, deletePlace, photoUrl } from './places.js';
 
 const loginView = document.getElementById('login-view');
 const appView = document.getElementById('app-view');
@@ -20,6 +21,10 @@ let tasks = [];
 let completions = [];
 let proactiveContent = [];
 let activeProactiveCategory = 'decoracio';
+let places = [];
+let travelMap = null;
+let countryLayer = null;
+let activeCountryFeature = null;
 
 function showLoginError(message) {
   loginError.textContent = message;
@@ -77,11 +82,12 @@ if (!supabaseReady) {
 async function loadAll() {
   const since = new Date();
   since.setDate(since.getDate() - 30);
-  [rooms, tasks, completions, proactiveContent] = await Promise.all([
+  [rooms, tasks, completions, proactiveContent, places] = await Promise.all([
     fetchRooms(),
     fetchTasks(),
     fetchCompletions(since.toISOString().slice(0, 10)),
     fetchProactiveContent(),
+    fetchPlaces(),
   ]);
   populateFilterSelects();
   populateTaskFormSelects();
@@ -97,6 +103,7 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.classList.add('active');
     document.querySelectorAll('.tab-panel').forEach((p) => (p.hidden = true));
     document.getElementById('tab-' + btn.dataset.tab).hidden = false;
+    if (btn.dataset.tab === 'mapa') initTravelMap();
   });
 });
 
@@ -462,6 +469,117 @@ function renderProactive() {
     </div>
   `).join('');
 }
+
+/* Mapa de viatges */
+const countryModal = document.getElementById('country-modal');
+const placeForm = document.getElementById('place-form');
+
+function countryStyle(feature) {
+  const visited = places.some((p) => p.country_code === feature.id);
+  return {
+    fillColor: visited ? '#6ea37e' : '#1f2620',
+    fillOpacity: visited ? 0.85 : 1,
+    color: '#2b332a',
+    weight: 1,
+  };
+}
+
+async function initTravelMap() {
+  if (travelMap) {
+    travelMap.invalidateSize();
+    return;
+  }
+  travelMap = L.map('travel-map', { worldCopyJump: true }).setView([25, 10], 2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
+    maxZoom: 8,
+  }).addTo(travelMap);
+
+  const geo = await fetch('data/world-countries.geojson').then((r) => r.json());
+  countryLayer = L.geoJSON(geo, {
+    style: countryStyle,
+    onEachFeature: (feature, layer) => {
+      layer.on('click', () => openCountryModal(feature));
+      layer.on('mouseover', () => layer.setStyle({ fillColor: '#8fc79c' }));
+      layer.on('mouseout', () => layer.setStyle(countryStyle(feature)));
+    },
+  }).addTo(travelMap);
+}
+
+function restyleActiveCountry() {
+  countryLayer.eachLayer((layer) => {
+    if (layer.feature.id === activeCountryFeature.id) layer.setStyle(countryStyle(layer.feature));
+  });
+}
+
+function openCountryModal(feature) {
+  activeCountryFeature = feature;
+  document.getElementById('country-modal-title').textContent = feature.properties.name;
+  placeForm.reset();
+  renderCountryPlaces();
+  countryModal.hidden = false;
+}
+
+function renderCountryPlaces() {
+  const list = document.getElementById('country-places-list');
+  const items = places.filter((p) => p.country_code === activeCountryFeature.id);
+  if (items.length === 0) {
+    list.innerHTML = '<p class="empty-col">Encara no hi ha cap lloc apuntat aqui.</p>';
+    return;
+  }
+  list.innerHTML = items.map((p) => `
+    <div class="place-item">
+      ${p.photo_path ? `<img src="${photoUrl(p.photo_path)}" class="place-photo" alt="">` : ''}
+      <div class="place-info">
+        <div class="place-name">${p.place_name || 'Visitat'}</div>
+        ${p.visited_on ? `<div class="place-date">${p.visited_on}</div>` : ''}
+        ${p.notes ? `<div class="place-notes">${p.notes}</div>` : ''}
+      </div>
+      <button type="button" class="delete-btn" data-place-id="${p.id}">Elimina</button>
+    </div>
+  `).join('');
+  list.querySelectorAll('.delete-btn').forEach((btn) =>
+    btn.addEventListener('click', () => handleDeletePlace(btn.dataset.placeId))
+  );
+}
+
+async function handleDeletePlace(placeId) {
+  const place = places.find((p) => p.id === placeId);
+  if (!place || !confirm('Eliminar aquest lloc?')) return;
+  try {
+    await deletePlace(place);
+    places = places.filter((p) => p.id !== placeId);
+    renderCountryPlaces();
+    restyleActiveCountry();
+  } catch (err) {
+    showToast('No s\'ha pogut eliminar el lloc: ' + err.message, true);
+  }
+}
+
+document.getElementById('country-close').addEventListener('click', () => {
+  countryModal.hidden = true;
+});
+
+placeForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const photoFile = document.getElementById('place-photo').files[0] || null;
+  const fields = {
+    country_code: activeCountryFeature.id,
+    country_name: activeCountryFeature.properties.name,
+    place_name: document.getElementById('place-name').value.trim() || null,
+    visited_on: document.getElementById('place-date').value || null,
+    notes: document.getElementById('place-notes').value.trim() || null,
+  };
+  try {
+    const created = await createPlace(fields, photoFile);
+    places.push(created);
+    placeForm.reset();
+    renderCountryPlaces();
+    restyleActiveCountry();
+  } catch (err) {
+    showToast('No s\'ha pogut desar el lloc: ' + err.message, true);
+  }
+});
 
 /* Estadistiques */
 function renderStats() {

@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
 
@@ -33,6 +34,7 @@
       <button class="tab-btn active" data-tab="tasques">Tasques</button>
       <button class="tab-btn" data-tab="proactiva">Vida Proactiva</button>
       <button class="tab-btn" data-tab="estadistiques">Estadistiques</button>
+      <button class="tab-btn" data-tab="mapa">Mapa</button>
     </nav>
     <button id="logout-btn" class="ghost-btn">Sortir</button>
   </header>
@@ -58,6 +60,11 @@
 
     <section id="tab-estadistiques" class="tab-panel" hidden>
       <div class="stats-grid" id="stats-grid"></div>
+    </section>
+
+    <section id="tab-mapa" class="tab-panel" hidden>
+      <p class="map-intro">Fes clic a un país per marcar-lo com a visitat i afegir-hi llocs i fotos. Nomes tu (Jordi) hi tens accés.</p>
+      <div id="travel-map"></div>
     </section>
   </main>
 </div>
@@ -114,6 +121,32 @@
   </form>
 </div>
 
+<div id="country-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h2 id="country-modal-title">País</h2>
+    <div id="country-places-list"></div>
+    <form id="place-form">
+      <label>Nom del lloc (opcional)
+        <input type="text" id="place-name" placeholder="Ex: Roma">
+      </label>
+      <label>Data (opcional)
+        <input type="date" id="place-date">
+      </label>
+      <label>Notes (opcional)
+        <input type="text" id="place-notes">
+      </label>
+      <label>Foto (opcional)
+        <input type="file" id="place-photo" accept="image/*">
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="country-close" class="ghost-btn">Tanca</button>
+        <button type="submit" class="primary-btn">Afegeix</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

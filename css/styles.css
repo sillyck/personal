@@ -449,6 +449,45 @@ input:focus, select:focus, button:focus-visible {
   color: var(--green-strong);
 }
 
+/* Mapa de viatges */
+.map-intro { color: var(--text-muted); font-size: 13px; margin-bottom: 12px; }
+
+#travel-map {
+  height: 65vh;
+  min-height: 380px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.leaflet-control-zoom a {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+.leaflet-control-attribution {
+  background: rgba(23, 29, 22, 0.8) !important;
+  color: var(--text-muted) !important;
+}
+.leaflet-control-attribution a { color: var(--text-muted) !important; }
+
+#country-places-list { max-height: 240px; overflow-y: auto; margin-bottom: 4px; }
+
+.place-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.place-item:last-child { border-bottom: none; }
+
+.place-photo { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.place-info { flex: 1; min-width: 0; }
+.place-name { font-weight: 600; font-size: 14px; }
+.place-date, .place-notes { font-size: 12px; color: var(--text-muted); }
+
 /* Responsive */
 @media (max-width: 900px) {
   .topbar { flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
