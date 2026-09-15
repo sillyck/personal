@@ -82,13 +82,61 @@
         <h2 class="section-title">Actius</h2>
         <button id="new-holding-btn" class="primary-btn">+ Afegeix actiu</button>
       </div>
+      <p class="map-intro">El preu actual l'actualitzes tu quan el consultis: no hi ha cap font gratuïta fiable de preus per ISIN per a fons indexats (ni MyInvestor ni Finect obren les seves dades). Si no el poses, es fa servir el preu de compra.</p>
       <div class="holdings-table-wrap">
         <table class="holdings-table" id="holdings-table"></table>
       </div>
 
-      <div class="stat-card wide section-spaced">
-        <div class="label" style="margin-bottom:10px;">Diversificacio per país (per cost d'adquisició)</div>
-        <div id="country-diversification"></div>
+      <div class="finance-stats-row section-spaced">
+        <div class="stat-card">
+          <div class="value" id="stat-invested">-</div>
+          <div class="label">Aportat</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="stat-current-value">-</div>
+          <div class="label">Valor actual</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="stat-gain">-</div>
+          <div class="label">Guany / pèrdua</div>
+        </div>
+      </div>
+
+      <div class="panel-header section-spaced">
+        <h2 class="section-title">Distribució geogràfica</h2>
+      </div>
+      <p class="map-intro">Percentatge per país de cada fons (l'introdueixes tu des del factsheet, amb el botó "Països" de cada actiu); es pondera pel que tens invertit a cada fons.</p>
+      <div id="finance-map"></div>
+
+      <div class="panel-header section-spaced">
+        <h2 class="section-title">Projecció</h2>
+      </div>
+      <p class="map-intro">Calculadora amb els supòsits que hi posis. No és una predicció ni un consell d'inversió, només matemàtica d'interès compost.</p>
+      <form id="projection-form" class="projection-form">
+        <label>Valor de partida (€)
+          <input type="number" step="any" id="proj-start" required>
+        </label>
+        <label>Aportació mensual actual (€)
+          <input type="number" step="any" id="proj-monthly" required value="350">
+        </label>
+        <label>Rendiment anual assumit (%)
+          <input type="number" step="any" id="proj-return" required value="6">
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" id="proj-bump-enable"> Augmentar l'aportació a partir d'una data
+        </label>
+        <div id="proj-bump-fields" hidden>
+          <label>A partir de
+            <input type="date" id="proj-bump-date">
+          </label>
+          <label>Nova aportació mensual (€)
+            <input type="number" step="any" id="proj-bump-amount">
+          </label>
+        </div>
+        <button type="submit" class="primary-btn">Calcula</button>
+      </form>
+      <div class="holdings-table-wrap section-spaced">
+        <table id="projection-table"></table>
       </div>
     </section>
 
@@ -235,9 +283,6 @@
     <label>Preu mitja de compra (opcional)
       <input type="number" step="any" id="holding-cost">
     </label>
-    <label>País (opcional)
-      <input type="text" id="holding-country" placeholder="Ex: Estats Units">
-    </label>
     <label>Notes (opcional)
       <input type="text" id="holding-notes">
     </label>
@@ -246,6 +291,25 @@
       <button type="submit" class="primary-btn">Desa</button>
     </div>
   </form>
+</div>
+
+<div id="allocation-modal" class="modal" hidden>
+  <div class="modal-card">
+    <h2 id="allocation-modal-title">Distribució per país</h2>
+    <div id="allocation-list"></div>
+    <form id="allocation-form">
+      <label>País
+        <select id="allocation-country"></select>
+      </label>
+      <label>Percentatge
+        <input type="number" step="any" min="0.01" max="100" id="allocation-pct" required>
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="allocation-close" class="ghost-btn">Tanca</button>
+        <button type="submit" class="primary-btn">Afegeix</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

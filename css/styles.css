@@ -492,6 +492,29 @@ input:focus, select:focus, button:focus-visible {
 .holdings-table tr:last-child td { border-bottom: none; }
 
 .wide-card { max-width: 640px; }
+
+.finance-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+
+#finance-map { height: 380px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
+
+.projection-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: end;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.checkbox-label { flex-direction: row !important; align-items: center; gap: 8px !important; }
+.checkbox-label input { width: auto; }
+#proj-bump-fields { display: contents; }
+#proj-bump-fields[hidden] { display: none; }
+
+.price-cell { display: flex; align-items: center; gap: 4px; }
+.price-cell input { width: 90px; }
+.price-cell button { padding: 4px 8px; font-size: 11px; }
 .csv-preview-wrap { max-height: 55vh; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
 .csv-preview-wrap table { border-collapse: collapse; font-size: 12px; width: 100%; }
 .csv-preview-wrap th, .csv-preview-wrap td { padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }

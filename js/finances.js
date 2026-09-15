@@ -80,6 +80,31 @@ export async function deleteHolding(id) {
   if (error) throw error;
 }
 
+export async function setCurrentPrice(id, price) {
+  const { data, error } = await supabase.from('holdings').update({ current_price: price }).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchAllocations() {
+  const { data, error } = await supabase.from('holding_allocations').select('*');
+  if (error) throw error;
+  return data;
+}
+
+export async function addAllocation(holdingId, countryCode, countryName, percentage) {
+  const { data, error } = await supabase.from('holding_allocations').insert({
+    holding_id: holdingId, country_code: countryCode, country_name: countryName, percentage,
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteAllocation(id) {
+  const { error } = await supabase.from('holding_allocations').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export function parseCsv(text) {
   const rows = [];
   let row = [];
@@ -183,6 +208,32 @@ export function parsePlusvaluesRows(rows) {
     marketValue: parseEsNumber(r[idx.marketValue]),
     result: parseEsNumber(r[idx.result]),
   }));
+}
+
+/**
+ * Interes compost amb aportacions mensuals fixes. Si es dona `bump`, la
+ * quota mensual canvia a partir del mes indicat (dues fases enllaçades).
+ */
+export function projectGrowth({ startValue, monthlyContribution, annualReturnPct, yearsList, bump }) {
+  const r = annualReturnPct / 100 / 12;
+  const fv = (start, monthly, months) => {
+    if (months <= 0) return start;
+    if (r === 0) return start + monthly * months;
+    return start * Math.pow(1 + r, months) + monthly * ((Math.pow(1 + r, months) - 1) / r);
+  };
+  return yearsList.map((y) => {
+    const months = y * 12;
+    let value;
+    let contributed = startValue + monthlyContribution * Math.min(months, bump ? bump.afterMonths : months);
+    if (bump && bump.afterMonths < months) {
+      const phase1 = fv(startValue, monthlyContribution, bump.afterMonths);
+      value = fv(phase1, bump.newMonthly, months - bump.afterMonths);
+      contributed += bump.newMonthly * (months - bump.afterMonths);
+    } else {
+      value = fv(startValue, monthlyContribution, months);
+    }
+    return { years: y, value, contributed };
+  });
 }
 
 export async function upsertHoldingsFromOrders(aggregated, existingHoldings) {

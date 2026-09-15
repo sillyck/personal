@@ -12,7 +12,8 @@ import { fetchPlaces, createPlace, deletePlace, photoUrl } from './places.js';
 import {
   fetchDocuments, uploadDocument, deleteDocument, signedDocUrl, fetchDocText, parseCsv,
   detectCsvKind, parseOrdersRows, aggregateOrdersToHoldings, parsePlusvaluesRows, upsertHoldingsFromOrders,
-  fetchHoldings, createHolding, deleteHolding,
+  fetchHoldings, createHolding, deleteHolding, setCurrentPrice,
+  fetchAllocations, addAllocation, deleteAllocation, projectGrowth,
 } from './finances.js';
 import { fetchShoppingList, addShoppingItem, toggleShoppingItem, deleteShoppingItem, clearCheckedItems } from './shopping.js';
 
@@ -34,7 +35,12 @@ let activeCountryFeature = null;
 let majorCities = {};
 let documents = [];
 let holdings = [];
+let allocations = [];
 let shoppingItems = [];
+let worldGeo = null;
+let financeMap = null;
+let financeCountryLayer = null;
+let activeAllocationHolding = null;
 
 function showLoginError(message) {
   loginError.textContent = message;
@@ -92,7 +98,7 @@ if (!supabaseReady) {
 async function loadAll() {
   const since = new Date();
   since.setDate(since.getDate() - 30);
-  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa', 'documents financers', 'actius', 'llista de la compra'];
+  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa', 'documents financers', 'actius', 'llista de la compra', 'distribucio geografica'];
   const results = await Promise.allSettled([
     fetchRooms(),
     fetchTasks(),
@@ -102,8 +108,9 @@ async function loadAll() {
     fetchDocuments(),
     fetchHoldings(),
     fetchShoppingList(),
+    fetchAllocations(),
   ]);
-  [rooms, tasks, completions, proactiveContent, places, documents, holdings, shoppingItems] = results.map((r) =>
+  [rooms, tasks, completions, proactiveContent, places, documents, holdings, shoppingItems, allocations] = results.map((r) =>
     r.status === 'fulfilled' ? r.value : []
   );
   results.forEach((r, i) => {
@@ -128,6 +135,7 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     document.querySelectorAll('.tab-panel').forEach((p) => (p.hidden = true));
     document.getElementById('tab-' + btn.dataset.tab).hidden = false;
     if (btn.dataset.tab === 'mapa') initTravelMap();
+    if (btn.dataset.tab === 'finances') initFinanceMap();
   });
 });
 
@@ -522,6 +530,13 @@ function countryStyle(feature) {
   };
 }
 
+async function loadWorldGeo() {
+  if (!worldGeo) {
+    worldGeo = await fetch('data/world-countries.geojson').then((r) => r.json());
+  }
+  return worldGeo;
+}
+
 async function initTravelMap() {
   if (travelMap) {
     travelMap.invalidateSize();
@@ -534,7 +549,7 @@ async function initTravelMap() {
   }).addTo(travelMap);
 
   const [geo, cities] = await Promise.all([
-    fetch('data/world-countries.geojson').then((r) => r.json()),
+    loadWorldGeo(),
     fetch('data/major-cities.json').then((r) => r.json()),
   ]);
   majorCities = cities;
@@ -805,14 +820,20 @@ function renderHoldings() {
     return;
   }
   table.innerHTML = `
-    <tr><th>Ticker</th><th>Nom</th><th>Quantitat</th><th>Preu mitja</th><th>País</th><th></th></tr>
+    <tr><th>Ticker / ISIN</th><th>Nom</th><th>Quantitat</th><th>Preu mitjà</th><th>Preu actual</th><th>Països</th><th></th></tr>
     ${holdings.map((h) => `
       <tr>
         <td>${h.ticker}</td>
         <td>${h.name || ''}</td>
         <td>${h.quantity}</td>
         <td>${h.avg_cost ?? ''}</td>
-        <td>${h.country || ''}</td>
+        <td>
+          <form class="price-cell" data-price-form="${h.id}">
+            <input type="number" step="any" value="${h.current_price ?? ''}" placeholder="ex: 12.34">
+            <button type="submit" class="ghost-btn">Desa</button>
+          </form>
+        </td>
+        <td><button type="button" class="ghost-btn" data-allocations="${h.id}">Països</button></td>
         <td><button type="button" class="delete-btn" data-holding-id="${h.id}">Elimina</button></td>
       </tr>
     `).join('')}
@@ -820,15 +841,43 @@ function renderHoldings() {
   table.querySelectorAll('[data-holding-id]').forEach((btn) =>
     btn.addEventListener('click', () => handleDeleteHolding(btn.dataset.holdingId))
   );
+  table.querySelectorAll('[data-allocations]').forEach((btn) =>
+    btn.addEventListener('click', () => openAllocationModal(btn.dataset.allocations))
+  );
+  table.querySelectorAll('[data-price-form]').forEach((form) =>
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const price = form.querySelector('input').value;
+      handleSetPrice(form.dataset.priceForm, price ? Number(price) : null);
+    })
+  );
+}
+
+async function handleSetPrice(id, price) {
+  try {
+    const updated = await setCurrentPrice(id, price);
+    replaceInArray(holdings, updated);
+    renderFinanceStats();
+    showToast('Preu actualitzat.');
+  } catch (err) {
+    showToast('No s\'ha pogut desar el preu: ' + err.message, true);
+  }
+}
+
+function replaceInArray(arr, item) {
+  const idx = arr.findIndex((x) => x.id === item.id);
+  if (idx !== -1) arr[idx] = item; else arr.push(item);
 }
 
 async function handleDeleteHolding(id) {
-  if (!confirm('Eliminar aquest actiu?')) return;
+  if (!confirm('Eliminar aquest actiu? També s\'esborrarà la seva distribució per país.')) return;
   try {
     await deleteHolding(id);
     holdings = holdings.filter((h) => h.id !== id);
+    allocations = allocations.filter((a) => a.holding_id !== id);
     renderHoldings();
-    renderDiversification();
+    renderFinanceStats();
+    renderFinanceMap();
   } catch (err) {
     showToast('No s\'ha pogut eliminar: ' + err.message, true);
   }
@@ -847,7 +896,6 @@ holdingForm.addEventListener('submit', async (e) => {
     name: document.getElementById('holding-name').value.trim() || null,
     quantity: Number(document.getElementById('holding-quantity').value),
     avg_cost: document.getElementById('holding-cost').value ? Number(document.getElementById('holding-cost').value) : null,
-    country: document.getElementById('holding-country').value.trim() || null,
     notes: document.getElementById('holding-notes').value.trim() || null,
   };
   try {
@@ -855,39 +903,187 @@ holdingForm.addEventListener('submit', async (e) => {
     holdings.push(created);
     holdingModal.hidden = true;
     renderHoldings();
-    renderDiversification();
+    renderFinanceStats();
   } catch (err) {
     showToast('No s\'ha pogut desar l\'actiu: ' + err.message, true);
   }
 });
 
-function renderDiversification() {
-  const el = document.getElementById('country-diversification');
-  const byCountry = {};
-  holdings.forEach((h) => {
-    const country = h.country || 'Sense especificar';
-    const value = h.quantity * (h.avg_cost || 0);
-    byCountry[country] = (byCountry[country] || 0) + value;
-  });
-  const entries = Object.entries(byCountry).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
-  if (entries.length === 0) {
-    el.innerHTML = '<p class="empty-col">Afegeix actius amb país i preu de compra per veure-ho.</p>';
+/* Distribucio geografica dels actius */
+const allocationModal = document.getElementById('allocation-modal');
+const allocationForm = document.getElementById('allocation-form');
+
+async function openAllocationModal(holdingId) {
+  activeAllocationHolding = holdings.find((h) => h.id === holdingId);
+  if (!activeAllocationHolding) return;
+  document.getElementById('allocation-modal-title').textContent = `Distribució per país: ${activeAllocationHolding.ticker}`;
+
+  const geo = await loadWorldGeo();
+  const countrySelect = document.getElementById('allocation-country');
+  countrySelect.innerHTML = geo.features
+    .slice().sort((a, b) => a.properties.name.localeCompare(b.properties.name))
+    .map((f) => `<option value="${f.id}">${f.properties.name}</option>`).join('');
+
+  renderAllocationList();
+  allocationForm.reset();
+  allocationModal.hidden = false;
+}
+
+function renderAllocationList() {
+  const list = document.getElementById('allocation-list');
+  const items = allocations.filter((a) => a.holding_id === activeAllocationHolding.id);
+  const total = items.reduce((s, a) => s + Number(a.percentage), 0);
+  if (items.length === 0) {
+    list.innerHTML = '<p class="empty-col">Cap país afegit encara.</p>';
     return;
   }
-  const max = Math.max(...entries.map(([, v]) => v));
-  el.innerHTML = entries.map(([country, value]) => `
-    <div class="bar-row">
-      <span class="name">${country}</span>
-      <span class="bar-track"><span class="bar-fill" style="width:${(value / max) * 100}%"></span></span>
-      <span class="count">${value.toFixed(0)}</span>
+  list.innerHTML = items.map((a) => `
+    <div class="place-item">
+      <div class="place-info">
+        <div class="place-name">${a.country_name}</div>
+        <div class="place-date">${a.percentage}%</div>
+      </div>
+      <button type="button" class="delete-btn" data-alloc-id="${a.id}">Elimina</button>
     </div>
-  `).join('');
+  `).join('') + `<p class="stat-note">Suma actual: ${total.toFixed(1)}%${total > 100 ? ' (per sobre de 100, revisa-ho)' : ''}</p>`;
+  list.querySelectorAll('[data-alloc-id]').forEach((btn) =>
+    btn.addEventListener('click', () => handleDeleteAllocation(btn.dataset.allocId))
+  );
 }
+
+async function handleDeleteAllocation(id) {
+  try {
+    await deleteAllocation(id);
+    allocations = allocations.filter((a) => a.id !== id);
+    renderAllocationList();
+    renderFinanceMap();
+  } catch (err) {
+    showToast('No s\'ha pogut eliminar: ' + err.message, true);
+  }
+}
+
+document.getElementById('allocation-close').addEventListener('click', () => {
+  allocationModal.hidden = true;
+  renderFinanceMap();
+});
+
+allocationForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const select = document.getElementById('allocation-country');
+  const countryCode = select.value;
+  const countryName = select.options[select.selectedIndex].text;
+  const pct = Number(document.getElementById('allocation-pct').value);
+  try {
+    const created = await addAllocation(activeAllocationHolding.id, countryCode, countryName, pct);
+    allocations.push(created);
+    allocationForm.reset();
+    renderAllocationList();
+  } catch (err) {
+    showToast('No s\'ha pogut afegir: ' + err.message, true);
+  }
+});
+
+function holdingValue(h) {
+  return h.quantity * (h.current_price ?? h.avg_cost ?? 0);
+}
+
+function renderFinanceStats() {
+  const invested = holdings.reduce((s, h) => s + h.quantity * (h.avg_cost || 0), 0);
+  const current = holdings.reduce((s, h) => s + holdingValue(h), 0);
+  const gain = current - invested;
+  document.getElementById('stat-invested').textContent = invested.toFixed(0) + ' €';
+  document.getElementById('stat-current-value').textContent = current.toFixed(0) + ' €';
+  const gainEl = document.getElementById('stat-gain');
+  gainEl.textContent = (gain >= 0 ? '+' : '') + gain.toFixed(0) + ' €';
+  gainEl.className = 'value ' + (gain >= 0 ? 'result-positive' : 'result-negative');
+  document.getElementById('proj-start').value = current > 0 ? current.toFixed(2) : invested.toFixed(2);
+}
+
+function countryFillColor(pct) {
+  if (pct <= 0) return '#1f2620';
+  if (pct < 5) return '#3a5a45';
+  if (pct < 15) return '#4f6b57';
+  if (pct < 30) return '#6ea37e';
+  return '#8fc79c';
+}
+
+async function initFinanceMap() {
+  if (financeMap) {
+    financeMap.invalidateSize();
+    renderFinanceMap();
+    return;
+  }
+  financeMap = L.map('finance-map', { worldCopyJump: true }).setView([20, 0], 1);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap',
+    maxZoom: 8,
+  }).addTo(financeMap);
+  const geo = await loadWorldGeo();
+  financeCountryLayer = L.geoJSON(geo, {
+    style: (feature) => ({ fillColor: '#1f2620', fillOpacity: 0.85, color: '#2b332a', weight: 1 }),
+    onEachFeature: (feature, layer) => layer.bindTooltip('', { sticky: true }),
+  }).addTo(financeMap);
+  renderFinanceMap();
+}
+
+function renderFinanceMap() {
+  if (!financeCountryLayer) return;
+  const totalInvested = holdings.reduce((s, h) => s + h.quantity * (h.avg_cost || 0), 0);
+  const byCountry = {};
+  allocations.forEach((a) => {
+    const holding = holdings.find((h) => h.id === a.holding_id);
+    if (!holding) return;
+    const investedInHolding = holding.quantity * (holding.avg_cost || 0);
+    const weighted = investedInHolding * (Number(a.percentage) / 100);
+    byCountry[a.country_code] = (byCountry[a.country_code] || 0) + weighted;
+  });
+  financeCountryLayer.eachLayer((layer) => {
+    const value = byCountry[layer.feature.id] || 0;
+    const pct = totalInvested > 0 ? (value / totalInvested) * 100 : 0;
+    layer.setStyle({ fillColor: countryFillColor(pct), fillOpacity: pct > 0 ? 0.85 : 1 });
+    layer.setTooltipContent(`${layer.feature.properties.name}: ${pct.toFixed(1)}%`);
+  });
+}
+
+/* Projeccio */
+document.getElementById('proj-bump-enable').addEventListener('change', (e) => {
+  document.getElementById('proj-bump-fields').hidden = !e.target.checked;
+});
+
+document.getElementById('projection-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const startValue = Number(document.getElementById('proj-start').value);
+  const monthlyContribution = Number(document.getElementById('proj-monthly').value);
+  const annualReturnPct = Number(document.getElementById('proj-return').value);
+  let bump = null;
+  if (document.getElementById('proj-bump-enable').checked) {
+    const bumpDate = document.getElementById('proj-bump-date').value;
+    const newMonthly = Number(document.getElementById('proj-bump-amount').value);
+    if (bumpDate && newMonthly) {
+      const months = Math.max(0, Math.round((new Date(bumpDate) - new Date()) / (1000 * 60 * 60 * 24 * 30.44)));
+      bump = { afterMonths: months, newMonthly };
+    }
+  }
+  const results = projectGrowth({ startValue, monthlyContribution, annualReturnPct, yearsList: [1, 5, 10, 15, 20, 25, 30], bump });
+  const table = document.getElementById('projection-table');
+  table.innerHTML = '<tr><th>Anys</th><th>Valor projectat</th><th>Aportat total</th><th>Rendiment generat</th></tr>' +
+    results.map((r) => {
+      const growth = r.value - r.contributed;
+      return `
+      <tr>
+        <td>${r.years}</td>
+        <td>${r.value.toLocaleString('ca-ES', { maximumFractionDigits: 0 })} €</td>
+        <td>${r.contributed.toLocaleString('ca-ES', { maximumFractionDigits: 0 })} €</td>
+        <td class="${growth >= 0 ? 'result-positive' : 'result-negative'}">${growth.toLocaleString('ca-ES', { maximumFractionDigits: 0 })} €</td>
+      </tr>
+    `;
+    }).join('');
+});
 
 function renderFinances() {
   renderDocuments();
   renderHoldings();
-  renderDiversification();
+  renderFinanceStats();
 }
 
 /* Llista de la compra */
