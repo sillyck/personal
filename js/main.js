@@ -82,13 +82,22 @@ if (!supabaseReady) {
 async function loadAll() {
   const since = new Date();
   since.setDate(since.getDate() - 30);
-  [rooms, tasks, completions, proactiveContent, places] = await Promise.all([
+  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa'];
+  const results = await Promise.allSettled([
     fetchRooms(),
     fetchTasks(),
     fetchCompletions(since.toISOString().slice(0, 10)),
     fetchProactiveContent(),
     fetchPlaces(),
   ]);
+  [rooms, tasks, completions, proactiveContent, places] = results.map((r) =>
+    r.status === 'fulfilled' ? r.value : []
+  );
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      showToast(`No s'ha pogut carregar ${labels[i]}: ${r.reason.message}`, true);
+    }
+  });
   populateFilterSelects();
   populateTaskFormSelects();
   renderKanban();
