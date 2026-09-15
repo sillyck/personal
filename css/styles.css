@@ -53,6 +53,7 @@ input:focus, select:focus, button:focus-visible {
 }
 
 .view[hidden] { display: none; }
+#login-view[hidden], #app-view[hidden] { display: none; }
 
 /* Login */
 #login-view {
