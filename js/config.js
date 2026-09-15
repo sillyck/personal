@@ -1,2 +1,2 @@
-export const SUPABASE_URL = 'PENDENT_URL_SUPABASE';
-export const SUPABASE_ANON_KEY = 'PENDENT_ANON_KEY_SUPABASE';
+export const SUPABASE_URL = 'https://orazpjfflxcwezjrsuds.supabase.co';
+export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yYXpwamZmbHhjd2V6anJzdWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0NDAxNzMsImV4cCI6MjEwNTAxNjE3M30.8r8qMBLEcDs5ipUKq0N9wLX22rjCMNagqdfFYd75SG0';
