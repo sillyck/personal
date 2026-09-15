@@ -35,6 +35,7 @@
       <button class="tab-btn" data-tab="proactiva">Vida Proactiva</button>
       <button class="tab-btn" data-tab="estadistiques">Estadistiques</button>
       <button class="tab-btn" data-tab="mapa">Mapa</button>
+      <button class="tab-btn" data-tab="finances">Finances</button>
     </nav>
     <button id="logout-btn" class="ghost-btn">Sortir</button>
   </header>
@@ -65,6 +66,29 @@
     <section id="tab-mapa" class="tab-panel" hidden>
       <p class="map-intro">Fes clic a un país per marcar-lo com a visitat i afegir-hi llocs i fotos. Nomes tu (Jordi) hi tens accés.</p>
       <div id="travel-map"></div>
+    </section>
+
+    <section id="tab-finances" class="tab-panel" hidden>
+      <p class="map-intro">Nomes tu (Jordi) hi tens accés. Documents guardats de manera privada; els actius els introdueixes a mà.</p>
+
+      <div class="panel-header">
+        <h2 class="section-title">Documents</h2>
+        <button id="new-doc-btn" class="primary-btn">+ Puja document</button>
+      </div>
+      <div class="doc-grid" id="doc-grid"></div>
+
+      <div class="panel-header section-spaced">
+        <h2 class="section-title">Actius</h2>
+        <button id="new-holding-btn" class="primary-btn">+ Afegeix actiu</button>
+      </div>
+      <div class="holdings-table-wrap">
+        <table class="holdings-table" id="holdings-table"></table>
+      </div>
+
+      <div class="stat-card wide section-spaced">
+        <div class="label" style="margin-bottom:10px;">Diversificacio per país (per cost d'adquisició)</div>
+        <div id="country-diversification"></div>
+      </div>
     </section>
   </main>
 </div>
@@ -130,7 +154,8 @@
         <select id="place-region"></select>
       </label>
       <label>Nom del lloc (opcional)
-        <input type="text" id="place-name" placeholder="Ex: Roma">
+        <input type="text" id="place-name" list="place-name-cities" placeholder="Tria una ciutat o escriu-ne una altra">
+        <datalist id="place-name-cities"></datalist>
       </label>
       <label>Des de quan
         <input type="date" id="place-date-from" required>
@@ -150,6 +175,60 @@
       </div>
     </form>
   </div>
+</div>
+
+<div id="doc-modal" class="modal" hidden>
+  <form id="doc-form" class="modal-card">
+    <h2>Puja document</h2>
+    <label>Etiqueta
+      <input type="text" id="doc-label" required placeholder="Ex: Extracte gener 2026">
+    </label>
+    <label>Fitxer (CSV o PDF)
+      <input type="file" id="doc-file" accept=".csv,.pdf" required>
+    </label>
+    <div class="modal-actions">
+      <button type="button" id="doc-cancel" class="ghost-btn">Cancel·la</button>
+      <button type="submit" class="primary-btn">Puja</button>
+    </div>
+  </form>
+</div>
+
+<div id="csv-preview-modal" class="modal" hidden>
+  <div class="modal-card wide-card">
+    <h2 id="csv-preview-title">CSV</h2>
+    <div class="csv-preview-wrap"><table id="csv-preview-table"></table></div>
+    <div class="modal-actions">
+      <button type="button" id="csv-preview-close" class="ghost-btn">Tanca</button>
+    </div>
+  </div>
+</div>
+
+<div id="holding-modal" class="modal" hidden>
+  <form id="holding-form" class="modal-card">
+    <h2>Nou actiu</h2>
+    <label>Ticker
+      <input type="text" id="holding-ticker" required placeholder="Ex: VWCE">
+    </label>
+    <label>Nom (opcional)
+      <input type="text" id="holding-name">
+    </label>
+    <label>Quantitat
+      <input type="number" step="any" id="holding-quantity" required>
+    </label>
+    <label>Preu mitja de compra (opcional)
+      <input type="number" step="any" id="holding-cost">
+    </label>
+    <label>País (opcional)
+      <input type="text" id="holding-country" placeholder="Ex: Estats Units">
+    </label>
+    <label>Notes (opcional)
+      <input type="text" id="holding-notes">
+    </label>
+    <div class="modal-actions">
+      <button type="button" id="holding-cancel" class="ghost-btn">Cancel·la</button>
+      <button type="submit" class="primary-btn">Desa</button>
+    </div>
+  </form>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

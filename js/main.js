@@ -9,6 +9,10 @@ import {
 import { PROACTIVE_CATEGORIES, fetchProactiveContent } from './proactive.js';
 import { computeStats } from './stats.js';
 import { fetchPlaces, createPlace, deletePlace, photoUrl } from './places.js';
+import {
+  fetchDocuments, uploadDocument, deleteDocument, signedDocUrl, fetchDocText, parseCsvPreview,
+  fetchHoldings, createHolding, deleteHolding,
+} from './finances.js';
 
 const loginView = document.getElementById('login-view');
 const appView = document.getElementById('app-view');
@@ -25,6 +29,9 @@ let places = [];
 let travelMap = null;
 let countryLayer = null;
 let activeCountryFeature = null;
+let majorCities = {};
+let documents = [];
+let holdings = [];
 
 function showLoginError(message) {
   loginError.textContent = message;
@@ -82,15 +89,17 @@ if (!supabaseReady) {
 async function loadAll() {
   const since = new Date();
   since.setDate(since.getDate() - 30);
-  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa'];
+  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'mapa', 'documents financers', 'actius'];
   const results = await Promise.allSettled([
     fetchRooms(),
     fetchTasks(),
     fetchCompletions(since.toISOString().slice(0, 10)),
     fetchProactiveContent(),
     fetchPlaces(),
+    fetchDocuments(),
+    fetchHoldings(),
   ]);
-  [rooms, tasks, completions, proactiveContent, places] = results.map((r) =>
+  [rooms, tasks, completions, proactiveContent, places, documents, holdings] = results.map((r) =>
     r.status === 'fulfilled' ? r.value : []
   );
   results.forEach((r, i) => {
@@ -103,6 +112,7 @@ async function loadAll() {
   renderKanban();
   renderProactive();
   renderStats();
+  renderFinances();
 }
 
 /* Tabs */
@@ -518,7 +528,11 @@ async function initTravelMap() {
     maxZoom: 8,
   }).addTo(travelMap);
 
-  const geo = await fetch('data/world-countries.geojson').then((r) => r.json());
+  const [geo, cities] = await Promise.all([
+    fetch('data/world-countries.geojson').then((r) => r.json()),
+    fetch('data/major-cities.json').then((r) => r.json()),
+  ]);
+  majorCities = cities;
   countryLayer = L.geoJSON(geo, {
     style: countryStyle,
     onEachFeature: (feature, layer) => {
@@ -539,6 +553,9 @@ function openCountryModal(feature) {
   activeCountryFeature = feature;
   document.getElementById('country-modal-title').textContent = feature.properties.name;
   placeForm.reset();
+
+  document.getElementById('place-name-cities').innerHTML =
+    (majorCities[feature.id] || []).map((c) => `<option value="${c}">`).join('');
 
   const regionField = document.getElementById('place-region-field');
   if (feature.id === 'ESP') {
@@ -621,6 +638,188 @@ placeForm.addEventListener('submit', async (e) => {
     showToast('No s\'ha pogut desar el lloc: ' + err.message, true);
   }
 });
+
+/* Finances */
+const docModal = document.getElementById('doc-modal');
+const docForm = document.getElementById('doc-form');
+const holdingModal = document.getElementById('holding-modal');
+const holdingForm = document.getElementById('holding-form');
+const csvPreviewModal = document.getElementById('csv-preview-modal');
+
+function docTypeLabel(type) {
+  return type === 'pdf' ? 'PDF' : type === 'csv' ? 'CSV' : 'Fitxer';
+}
+
+function renderDocuments() {
+  const grid = document.getElementById('doc-grid');
+  if (documents.length === 0) {
+    grid.innerHTML = '<p class="empty-col">Encara no has pujat cap document.</p>';
+    return;
+  }
+  grid.innerHTML = documents.map((d) => `
+    <div class="doc-card">
+      <span class="doc-type-badge">${docTypeLabel(d.file_type)}</span>
+      <div class="doc-label">${d.label}</div>
+      <div class="doc-meta">${d.file_name} · ${new Date(d.uploaded_at).toLocaleDateString('ca')}</div>
+      <div class="doc-actions">
+        <button type="button" class="ghost-btn" data-view="${d.id}">Veure</button>
+        <button type="button" class="delete-btn" data-doc-id="${d.id}">Elimina</button>
+      </div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('[data-view]').forEach((btn) =>
+    btn.addEventListener('click', () => handleViewDoc(btn.dataset.view))
+  );
+  grid.querySelectorAll('[data-doc-id]').forEach((btn) =>
+    btn.addEventListener('click', () => handleDeleteDoc(btn.dataset.docId))
+  );
+}
+
+async function handleViewDoc(docId) {
+  const doc = documents.find((d) => d.id === docId);
+  if (!doc) return;
+  try {
+    if (doc.file_type === 'csv') {
+      const text = await fetchDocText(doc.file_path);
+      const rows = parseCsvPreview(text);
+      document.getElementById('csv-preview-title').textContent = doc.label;
+      document.getElementById('csv-preview-table').innerHTML = rows.map((row, i) =>
+        `<tr>${row.map((cell) => `<${i === 0 ? 'th' : 'td'}>${cell}</${i === 0 ? 'th' : 'td'}>`).join('')}</tr>`
+      ).join('');
+      csvPreviewModal.hidden = false;
+    } else {
+      const url = await signedDocUrl(doc.file_path);
+      window.open(url, '_blank', 'noopener');
+    }
+  } catch (err) {
+    showToast('No s\'ha pogut obrir el document: ' + err.message, true);
+  }
+}
+
+async function handleDeleteDoc(docId) {
+  const doc = documents.find((d) => d.id === docId);
+  if (!doc || !confirm('Eliminar aquest document?')) return;
+  try {
+    await deleteDocument(doc);
+    documents = documents.filter((d) => d.id !== docId);
+    renderDocuments();
+  } catch (err) {
+    showToast('No s\'ha pogut eliminar: ' + err.message, true);
+  }
+}
+
+document.getElementById('new-doc-btn').addEventListener('click', () => {
+  docForm.reset();
+  docModal.hidden = false;
+});
+document.getElementById('doc-cancel').addEventListener('click', () => { docModal.hidden = true; });
+document.getElementById('csv-preview-close').addEventListener('click', () => { csvPreviewModal.hidden = true; });
+
+docForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const file = document.getElementById('doc-file').files[0];
+  const label = document.getElementById('doc-label').value.trim();
+  try {
+    const created = await uploadDocument(label, file);
+    documents.unshift(created);
+    docModal.hidden = true;
+    renderDocuments();
+  } catch (err) {
+    showToast('No s\'ha pogut pujar el document: ' + err.message, true);
+  }
+});
+
+function renderHoldings() {
+  const table = document.getElementById('holdings-table');
+  if (holdings.length === 0) {
+    table.innerHTML = '<tr><td class="empty-col">Encara no has afegit cap actiu.</td></tr>';
+    return;
+  }
+  table.innerHTML = `
+    <tr><th>Ticker</th><th>Nom</th><th>Quantitat</th><th>Preu mitja</th><th>País</th><th></th></tr>
+    ${holdings.map((h) => `
+      <tr>
+        <td>${h.ticker}</td>
+        <td>${h.name || ''}</td>
+        <td>${h.quantity}</td>
+        <td>${h.avg_cost ?? ''}</td>
+        <td>${h.country || ''}</td>
+        <td><button type="button" class="delete-btn" data-holding-id="${h.id}">Elimina</button></td>
+      </tr>
+    `).join('')}
+  `;
+  table.querySelectorAll('[data-holding-id]').forEach((btn) =>
+    btn.addEventListener('click', () => handleDeleteHolding(btn.dataset.holdingId))
+  );
+}
+
+async function handleDeleteHolding(id) {
+  if (!confirm('Eliminar aquest actiu?')) return;
+  try {
+    await deleteHolding(id);
+    holdings = holdings.filter((h) => h.id !== id);
+    renderHoldings();
+    renderDiversification();
+  } catch (err) {
+    showToast('No s\'ha pogut eliminar: ' + err.message, true);
+  }
+}
+
+document.getElementById('new-holding-btn').addEventListener('click', () => {
+  holdingForm.reset();
+  holdingModal.hidden = false;
+});
+document.getElementById('holding-cancel').addEventListener('click', () => { holdingModal.hidden = true; });
+
+holdingForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fields = {
+    ticker: document.getElementById('holding-ticker').value.trim().toUpperCase(),
+    name: document.getElementById('holding-name').value.trim() || null,
+    quantity: Number(document.getElementById('holding-quantity').value),
+    avg_cost: document.getElementById('holding-cost').value ? Number(document.getElementById('holding-cost').value) : null,
+    country: document.getElementById('holding-country').value.trim() || null,
+    notes: document.getElementById('holding-notes').value.trim() || null,
+  };
+  try {
+    const created = await createHolding(fields);
+    holdings.push(created);
+    holdingModal.hidden = true;
+    renderHoldings();
+    renderDiversification();
+  } catch (err) {
+    showToast('No s\'ha pogut desar l\'actiu: ' + err.message, true);
+  }
+});
+
+function renderDiversification() {
+  const el = document.getElementById('country-diversification');
+  const byCountry = {};
+  holdings.forEach((h) => {
+    const country = h.country || 'Sense especificar';
+    const value = h.quantity * (h.avg_cost || 0);
+    byCountry[country] = (byCountry[country] || 0) + value;
+  });
+  const entries = Object.entries(byCountry).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) {
+    el.innerHTML = '<p class="empty-col">Afegeix actius amb país i preu de compra per veure-ho.</p>';
+    return;
+  }
+  const max = Math.max(...entries.map(([, v]) => v));
+  el.innerHTML = entries.map(([country, value]) => `
+    <div class="bar-row">
+      <span class="name">${country}</span>
+      <span class="bar-track"><span class="bar-fill" style="width:${(value / max) * 100}%"></span></span>
+      <span class="count">${value.toFixed(0)}</span>
+    </div>
+  `).join('');
+}
+
+function renderFinances() {
+  renderDocuments();
+  renderHoldings();
+  renderDiversification();
+}
 
 /* Estadistiques */
 function renderStats() {
