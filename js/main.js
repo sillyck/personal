@@ -1,10 +1,11 @@
 import { supabase, supabaseReady } from './supabaseClient.js';
 import { signIn, signOut, getSession, onAuthChange } from './auth.js';
 import {
-  WEEKDAY_SHORT, FREQUENCY_PRESETS, frequencyPhrase, CATEGORIES, EFFORTS, ASSIGNEES,
+  WEEKDAY_SHORT, FREQUENCY_PRESETS, frequencyPhrase, CATEGORIES, ASSIGNEES,
+  DURATION_PRESETS, DURATION_BUCKETS, formatDuration, matchesDurationBucket,
   STATUS_ORDER, STATUS_LABELS, PRIORITY_LEVELS,
   fetchRooms, fetchTasks, createTask, updateTask, deleteTask, markTaskDone, fetchCompletions,
-  dueInfo, priorityInfo, effectiveStatus, setTaskStatus,
+  dueInfo, priorityInfo, effectiveStatus, setTaskStatus, computeUpcomingDueDates, formatDateKey,
 } from './tasks.js';
 import { PROACTIVE_CATEGORIES, fetchProactiveContent } from './proactive.js';
 import { computeStats } from './stats.js';
@@ -151,6 +152,7 @@ document.querySelectorAll('.tab-btn').forEach((btn) => {
     document.querySelectorAll('.tab-panel').forEach((p) => (p.hidden = true));
     document.getElementById('tab-' + btn.dataset.tab).hidden = false;
     if (btn.dataset.tab === 'mapa') initTravelMap();
+    if (btn.dataset.tab === 'calendari') renderCalendar();
   });
 });
 
@@ -164,11 +166,11 @@ function populateFilterSelects() {
   catSelect.innerHTML = '<option value="">Totes les categories</option>' +
     CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('');
 
-  const effortSelect = document.getElementById('filter-effort');
-  effortSelect.innerHTML = '<option value="">Tot l\'esforç</option>' +
-    EFFORTS.map((ef) => `<option value="${ef}">${ef}</option>`).join('');
+  const durationSelect = document.getElementById('filter-duration');
+  durationSelect.innerHTML = '<option value="">Tota la durada</option>' +
+    DURATION_BUCKETS.map((b) => `<option value="${b.key}">${b.label}</option>`).join('');
 
-  [roomSelect, catSelect, effortSelect].forEach((sel) => sel.addEventListener('change', renderKanban));
+  [roomSelect, catSelect, durationSelect].forEach((sel) => sel.addEventListener('change', renderKanban));
   document.getElementById('filter-search').addEventListener('input', renderKanban);
 }
 
@@ -211,13 +213,13 @@ function groupByRoom(items) {
 function renderKanban() {
   const roomFilter = document.getElementById('filter-room').value;
   const categoryFilter = document.getElementById('filter-category').value;
-  const effortFilter = document.getElementById('filter-effort').value;
+  const durationFilter = document.getElementById('filter-duration').value;
   const searchText = document.getElementById('filter-search').value.trim().toLowerCase();
 
   const filtered = tasks.filter((t) =>
     (!roomFilter || t.room_id === roomFilter) &&
     (!categoryFilter || t.category === categoryFilter) &&
-    (!effortFilter || t.effort === effortFilter) &&
+    matchesDurationBucket(t.duration_minutes, durationFilter) &&
     (!searchText || t.title.toLowerCase().includes(searchText))
   );
 
@@ -280,6 +282,7 @@ function taskCardHtml(task) {
       <div class="meta">
         <span class="badge">${roomName}</span>
         <span class="badge">${task.category}</span>
+        ${task.duration_minutes ? `<span class="badge">~${formatDuration(task.duration_minutes)}</span>` : ''}
       </div>
       <div class="priority-row">
         <span class="priority priority-${priority.key}"><span class="priority-dot"></span>${priority.label}${priority.manual ? ' <span class="manual-tag">manual</span>' : ''}</span>
@@ -321,6 +324,79 @@ function wireDragEvents(board) {
     });
   });
 }
+
+/* Calendari */
+let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+const CALENDAR_WEEKDAYS = [1, 2, 3, 4, 5, 6, 0].map((i) => WEEKDAY_SHORT[i]);
+
+function getCalendarGridRange(monthDate) {
+  const firstOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+  const startOffset = (firstOfMonth.getDay() + 6) % 7;
+  const gridStart = new Date(firstOfMonth);
+  gridStart.setDate(gridStart.getDate() - startOffset);
+
+  const lastOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+  const endOffset = (lastOfMonth.getDay() + 6) % 7;
+  const gridEnd = new Date(lastOfMonth);
+  gridEnd.setDate(gridEnd.getDate() + (6 - endOffset));
+
+  return { gridStart, gridEnd, firstOfMonth };
+}
+
+function renderCalendar() {
+  const { gridStart, gridEnd, firstOfMonth } = getCalendarGridRange(calendarMonth);
+  document.getElementById('calendar-month-label').textContent =
+    calendarMonth.toLocaleDateString('ca-ES', { month: 'long', year: 'numeric' });
+
+  const byDate = new Map();
+  tasks.forEach((task) => {
+    computeUpcomingDueDates(task, gridStart, gridEnd).forEach((d) => {
+      const key = formatDateKey(d);
+      if (!byDate.has(key)) byDate.set(key, []);
+      byDate.get(key).push(task);
+    });
+  });
+
+  const todayKey = formatDateKey(new Date());
+  const totalDays = Math.round((gridEnd - gridStart) / 86400000) + 1;
+  const cells = [];
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(gridStart);
+    d.setDate(d.getDate() + i);
+    const key = formatDateKey(d);
+    const inMonth = d.getMonth() === firstOfMonth.getMonth();
+    const dayTasks = byDate.get(key) || [];
+    const shown = dayTasks.slice(0, 4);
+    cells.push(`
+      <div class="calendar-cell ${inMonth ? '' : 'outside'} ${key === todayKey ? 'today' : ''} ${dayTasks.length ? 'has-tasks' : ''}">
+        <div class="calendar-day-num">${d.getDate()}</div>
+        <div class="calendar-day-tasks">
+          ${shown.map((t) => `<button type="button" class="calendar-chip" data-id="${t.id}" title="${t.title}">${t.title}</button>`).join('')}
+          ${dayTasks.length > shown.length ? `<div class="calendar-more">+${dayTasks.length - shown.length} més</div>` : ''}
+        </div>
+      </div>
+    `);
+  }
+
+  const grid = document.getElementById('calendar-grid');
+  grid.innerHTML = CALENDAR_WEEKDAYS.map((d) => `<div class="calendar-weekday">${d}</div>`).join('') + cells.join('');
+  grid.querySelectorAll('.calendar-chip').forEach((btn) =>
+    btn.addEventListener('click', () => handleEdit(btn.dataset.id))
+  );
+}
+
+document.getElementById('calendar-prev').addEventListener('click', () => {
+  calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+  renderCalendar();
+});
+document.getElementById('calendar-next').addEventListener('click', () => {
+  calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+  renderCalendar();
+});
+document.getElementById('calendar-today').addEventListener('click', () => {
+  calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  renderCalendar();
+});
 
 async function applyStatusChange(taskId, newStatus) {
   const task = tasks.find((t) => t.id === taskId);
@@ -372,6 +448,7 @@ async function handleMarkDone(taskId) {
     replaceTask(updated);
     completions.push(completion);
     renderKanban();
+    renderCalendar();
     renderStats();
   } catch (err) {
     showToast('No s\'ha pogut marcar com a feta: ' + err.message, true);
@@ -385,6 +462,7 @@ async function handleDelete(taskId) {
     await deleteTask(taskId);
     tasks = tasks.filter((t) => t.id !== taskId);
     renderKanban();
+    renderCalendar();
   } catch (err) {
     showToast('No s\'ha pogut eliminar: ' + err.message, true);
   }
@@ -408,7 +486,7 @@ function handleEdit(taskId) {
   document.getElementById('task-title').value = task.title;
   document.getElementById('task-room').value = task.room_id || '';
   document.getElementById('task-category').value = task.category;
-  document.getElementById('task-effort').value = task.effort;
+  document.getElementById('task-duration').value = task.duration_minutes;
   document.getElementById('task-interval').value = task.interval_days;
   setSelectedWeekdays(task.preferred_weekdays || []);
   document.getElementById('task-priority').value = task.priority_override || '';
@@ -424,7 +502,6 @@ function populateTaskFormSelects() {
   document.getElementById('task-room').innerHTML = '<option value="">General (sense habitacio)</option>' +
     rooms.map((r) => `<option value="${r.id}">${r.name}</option>`).join('');
   document.getElementById('task-category').innerHTML = CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('');
-  document.getElementById('task-effort').innerHTML = EFFORTS.map((ef) => `<option value="${ef}">${ef}</option>`).join('');
   document.getElementById('task-priority').innerHTML = '<option value="">Automatica (segons la data)</option>' +
     PRIORITY_LEVELS.map((p) => `<option value="${p.key}">${p.label}</option>`).join('');
   document.getElementById('task-assignee').innerHTML = '<option value="">Sense assignar</option>' +
@@ -440,11 +517,20 @@ function populateTaskFormSelects() {
   document.getElementById('frequency-presets').innerHTML = FREQUENCY_PRESETS.map((p, i) =>
     `<button type="button" class="preset-btn" data-preset="${i}">${p.label}</button>`
   ).join('');
-  document.querySelectorAll('.preset-btn').forEach((btn) => {
+  document.querySelectorAll('#frequency-presets .preset-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       const preset = FREQUENCY_PRESETS[Number(btn.dataset.preset)];
       document.getElementById('task-interval').value = preset.interval;
       setSelectedWeekdays(preset.weekdays);
+    });
+  });
+
+  document.getElementById('duration-presets').innerHTML = DURATION_PRESETS.map((min) =>
+    `<button type="button" class="preset-btn" data-duration="${min}">${formatDuration(min)}</button>`
+  ).join('');
+  document.querySelectorAll('#duration-presets .preset-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.getElementById('task-duration').value = btn.dataset.duration;
     });
   });
 }
@@ -469,7 +555,7 @@ taskForm.addEventListener('submit', async (e) => {
     title: document.getElementById('task-title').value.trim(),
     room_id: document.getElementById('task-room').value || null,
     category: document.getElementById('task-category').value,
-    effort: document.getElementById('task-effort').value,
+    duration_minutes: Number(document.getElementById('task-duration').value),
     interval_days: Number(document.getElementById('task-interval').value),
     preferred_weekdays: getSelectedWeekdays(),
     assignee: document.getElementById('task-assignee').value || null,
@@ -484,6 +570,7 @@ taskForm.addEventListener('submit', async (e) => {
     taskModal.hidden = true;
     editingTaskId = null;
     renderKanban();
+    renderCalendar();
   } catch (err) {
     showToast('No s\'ha pogut desar la tasca: ' + err.message, true);
   }

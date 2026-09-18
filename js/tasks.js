@@ -3,7 +3,32 @@ import { supabase } from './supabaseClient.js';
 export const WEEKDAY_LABELS = ['Diumenge', 'Dilluns', 'Dimarts', 'Dimecres', 'Dijous', 'Divendres', 'Dissabte'];
 export const WEEKDAY_SHORT = ['Dg', 'Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds'];
 export const CATEGORIES = ['Neteja', 'Vidres', 'Mobles', 'Manteniment', 'Ordre'];
-export const EFFORTS = ['baix', 'mitja', 'alt'];
+export const DURATION_PRESETS = [10, 15, 30, 45, 60, 90];
+export const DURATION_BUCKETS = [
+  { key: 'curt', label: 'Fins a 15 min', max: 15 },
+  { key: 'mitja', label: '15-30 min', min: 15, max: 30 },
+  { key: 'llarg', label: '30-60 min', min: 30, max: 60 },
+  { key: 'molt-llarg', label: 'Més d\'una hora', min: 60 },
+];
+
+export function formatDuration(minutes) {
+  const m = Number(minutes);
+  if (!m) return '';
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return rest ? `${h} h ${rest} min` : `${h} h`;
+}
+
+export function matchesDurationBucket(minutes, bucketKey) {
+  if (!bucketKey) return true;
+  const bucket = DURATION_BUCKETS.find((b) => b.key === bucketKey);
+  if (!bucket) return true;
+  const m = Number(minutes) || 0;
+  if (bucket.min != null && m < bucket.min) return false;
+  if (bucket.max != null && m >= bucket.max) return false;
+  return true;
+}
 export const ASSIGNEES = [
   { key: 'marta', label: 'Marta' },
   { key: 'jordi', label: 'Jordi' },
@@ -47,6 +72,13 @@ export const STATUS_LABELS = {
   fet: 'Fet',
 };
 
+export function formatDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function addDays(date, days) {
   const d = new Date(date);
   d.setDate(d.getDate() + days);
@@ -82,6 +114,26 @@ export function dueInfo(task) {
   else if (diffDays === 1) label = 'Toca demà';
   else label = `Toca en ${diffDays} dies`;
   return { due, diffDays, label, overdue: diffDays < 0 };
+}
+
+/**
+ * Genera les properes dates previstes d'una tasca dins un rang, simulant que
+ * cada cop es fa "a temps" (la data prevista passa a fer d'ultima feta per
+ * calcular la seguent), tal com faria l'app real quan la marques feta.
+ */
+export function computeUpcomingDueDates(task, rangeStart, rangeEnd, maxOccurrences = 62) {
+  const dates = [];
+  let cursor = task;
+  let count = 0;
+  while (count < maxOccurrences) {
+    const due = computeNextDue(cursor);
+    due.setHours(0, 0, 0, 0);
+    if (due > rangeEnd) break;
+    if (due >= rangeStart) dates.push(new Date(due));
+    cursor = { ...task, last_completed_at: formatDateKey(due) };
+    count++;
+  }
+  return dates;
 }
 
 export const PRIORITY_LEVELS = [
