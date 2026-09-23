@@ -1,10 +1,10 @@
 :root {
-  --bg: #10140f;
-  --surface: #171d16;
-  --surface-2: #1f2620;
-  --border: #2b332a;
-  --text: #e8ede4;
-  --text-muted: #93a08e;
+  --bg: #171614;
+  --surface: #1d1b18;
+  --surface-2: #26231e;
+  --border: #38342c;
+  --text: #ece7de;
+  --text-muted: #a39a8c;
   --green: #6ea37e;
   --green-strong: #8fc79c;
   --green-soft: rgba(110, 163, 126, 0.14);
@@ -95,7 +95,7 @@ input:focus, select:focus, button:focus-visible {
 
 .login-card button {
   background: var(--green);
-  color: #0e150f;
+  color: var(--bg);
   font-weight: 600;
   padding: 10px;
   margin-top: 6px;
@@ -144,7 +144,7 @@ input:focus, select:focus, button:focus-visible {
 
 .primary-btn {
   background: var(--green);
-  color: #0e150f;
+  color: var(--bg);
   font-weight: 600;
   padding: 9px 16px;
   font-size: 14px;
@@ -258,7 +258,7 @@ input:focus, select:focus, button:focus-visible {
   justify-content: center;
   font-size: 13px;
   font-weight: 700;
-  color: #0e150f;
+  color: var(--bg);
   box-shadow: 0 0 0 2px var(--surface-2);
 }
 .assignee-badge.marta { background: var(--marta); }
@@ -385,7 +385,7 @@ input:focus, select:focus, button:focus-visible {
 
 .calendar-cell.today .calendar-day-num {
   background: var(--green);
-  color: #0e150f;
+  color: var(--bg);
   border-radius: 50%;
 }
 
@@ -530,131 +530,7 @@ input:focus, select:focus, button:focus-visible {
   color: var(--green-strong);
 }
 
-/* Finances */
 .section-title { font-size: 16px; }
-.section-spaced { margin-top: 28px; }
-
-.doc-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.doc-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.doc-type-badge {
-  align-self: flex-start;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 2px 8px;
-  font-size: 11px;
-  color: var(--text-muted);
-  letter-spacing: 0.03em;
-}
-
-.doc-label { font-weight: 600; font-size: 14px; }
-.doc-meta { font-size: 12px; color: var(--text-muted); }
-.doc-actions { display: flex; justify-content: space-between; gap: 6px; margin-top: 4px; }
-
-.holdings-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
-
-.holdings-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.holdings-table th, .holdings-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
-.holdings-table th { color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
-.holdings-table tr:last-child td { border-bottom: none; }
-
-.wide-card { max-width: 640px; }
-
-.finance-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-
-.finance-subpanel[hidden] { display: none; }
-
-#finance-map { height: 380px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
-
-.projection-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  align-items: end;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-.checkbox-label { flex-direction: row !important; align-items: center; gap: 8px !important; }
-.checkbox-label input { width: auto; }
-#proj-bump-fields { display: contents; }
-#proj-bump-fields[hidden] { display: none; }
-
-.price-cell { display: flex; align-items: center; gap: 4px; }
-.price-cell input { width: 90px; }
-.price-cell button { padding: 4px 8px; font-size: 11px; }
-
-.name-cell { display: flex; align-items: center; gap: 4px; }
-.name-cell input { width: 120px; }
-.name-cell button { padding: 4px 8px; font-size: 11px; }
-
-/* Grafica de projeccio */
-.chart-wrap { position: relative; }
-.chart-legend { display: flex; gap: 18px; margin-bottom: 10px; font-size: 12px; color: var(--text-muted); }
-.chart-legend-item { display: flex; align-items: center; gap: 6px; }
-.chart-legend-swatch { width: 10px; height: 10px; border-radius: 2px; }
-.chart-legend-swatch.value { background: var(--green-strong); }
-.chart-legend-swatch.contributed { background: var(--text-muted); }
-.chart-legend-swatch.msci { background: var(--amber); }
-.chart-legend-swatch.actual { background: var(--green-strong); }
-
-.chart-value-area { fill: var(--green-strong); fill-opacity: 0.22; }
-.chart-value-line { fill: none; stroke: var(--green-strong); stroke-width: 2.5; }
-.chart-contributed-line { fill: none; stroke: var(--text-muted); stroke-width: 2; stroke-dasharray: 4 3; }
-.chart-msci-line { fill: none; stroke: var(--amber); stroke-width: 2.5; }
-.chart-actual-line { fill: none; stroke: var(--green-strong); stroke-width: 2.5; }
-.chart-actual-dot { fill: var(--green-strong); stroke: var(--surface); stroke-width: 2; }
-.chart-actual-label { fill: var(--green-strong); font-size: 11px; font-weight: 600; }
-.chart-axis-line { stroke: var(--border); stroke-width: 1; }
-.chart-axis-label { fill: var(--text-muted); font-size: 10px; }
-.chart-crosshair { stroke: var(--border); stroke-width: 1; }
-.chart-hover-dot { fill: var(--green-strong); stroke: var(--surface); stroke-width: 2; }
-.chart-hover-dot.msci { fill: var(--amber); }
-.chart-hover-dot.muted { fill: var(--text-muted); }
-
-.chart-tooltip {
-  position: absolute;
-  pointer-events: none;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 12px;
-  white-space: nowrap;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  opacity: 0;
-  transition: opacity 0.1s ease;
-}
-.chart-tooltip.visible { opacity: 1; }
-.chart-tooltip .tt-year { font-weight: 600; margin-bottom: 4px; }
-.chart-tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; }
-.csv-preview-wrap { max-height: 55vh; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
-.csv-preview-wrap table { border-collapse: collapse; font-size: 12px; width: 100%; }
-.csv-preview-wrap th, .csv-preview-wrap td { padding: 6px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.csv-preview-wrap th { background: var(--surface-2); position: sticky; top: 0; }
-
-.status-badge { border-radius: 999px; padding: 2px 8px; font-size: 11px; }
-.status-ok { background: var(--green-soft); color: var(--green-strong); }
-.status-bad { background: var(--danger-soft); color: var(--danger); }
-.status-pending { background: var(--surface-2); color: var(--text-muted); }
-
-.result-positive { color: var(--green-strong); }
-.result-negative { color: var(--danger); }
 
 /* Llista de la compra */
 .shopping-add-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
@@ -698,30 +574,7 @@ input:focus, select:focus, button:focus-visible {
 .shopping-item-name { font-weight: 600; font-size: 14px; }
 .shopping-item-note { color: var(--text-muted); font-size: 12px; flex: 1; }
 
-/* Mapa de viatges */
 .map-intro { color: var(--text-muted); font-size: 13px; margin-bottom: 12px; }
-
-#travel-map {
-  height: 65vh;
-  min-height: 380px;
-  border-radius: var(--radius);
-  overflow: hidden;
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.leaflet-control-zoom a {
-  background: var(--surface-2) !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
-}
-.leaflet-control-attribution {
-  background: rgba(23, 29, 22, 0.8) !important;
-  color: var(--text-muted) !important;
-}
-.leaflet-control-attribution a { color: var(--text-muted) !important; }
-
-#country-places-list { max-height: 240px; overflow-y: auto; margin-bottom: 4px; }
 
 .place-item {
   display: flex;
@@ -732,10 +585,9 @@ input:focus, select:focus, button:focus-visible {
 }
 .place-item:last-child { border-bottom: none; }
 
-.place-photo { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
 .place-info { flex: 1; min-width: 0; }
 .place-name { font-weight: 600; font-size: 14px; }
-.place-date, .place-notes { font-size: 12px; color: var(--text-muted); }
+.place-date { font-size: 12px; color: var(--text-muted); }
 
 /* Responsive */
 @media (max-width: 1100px) {
