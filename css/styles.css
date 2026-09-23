@@ -54,6 +54,10 @@ input:focus, select:focus, button:focus-visible {
   outline-offset: 1px;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; }
+}
+
 .view[hidden] { display: none; }
 #login-view[hidden], #app-view[hidden] { display: none; }
 
@@ -309,16 +313,16 @@ input:focus, select:focus, button:focus-visible {
 
 .status-select { font-size: 11px; padding: 4px 6px; flex: 1; min-width: 0; }
 
-.task-card .edit-btn,
-.task-card .delete-btn {
+.edit-btn,
+.delete-btn {
   background: transparent;
   color: var(--text-muted);
   padding: 5px 8px;
   font-size: 12px;
   flex-shrink: 0;
 }
-.task-card .edit-btn:hover { color: var(--green-strong); }
-.task-card .delete-btn:hover { color: var(--danger); }
+.edit-btn:hover { color: var(--green-strong); }
+.delete-btn:hover { color: var(--danger); }
 
 .empty-col { color: var(--text-muted); font-size: 13px; padding: 8px 0; }
 
@@ -456,7 +460,7 @@ input:focus, select:focus, button:focus-visible {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 18px;
+  padding: 16px;
 }
 .stat-card .value { font-family: var(--font-head); font-size: 32px; font-weight: 700; }
 .stat-card .label { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
@@ -540,7 +544,7 @@ input:focus, select:focus, button:focus-visible {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -734,6 +738,10 @@ input:focus, select:focus, button:focus-visible {
 .place-date, .place-notes { font-size: 12px; color: var(--text-muted); }
 
 /* Responsive */
+@media (max-width: 1100px) {
+  .kanban { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 900px) {
   .topbar { flex-wrap: wrap; gap: 10px; padding: 12px 16px; }
   .content { padding: 16px 14px 32px; }
