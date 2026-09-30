@@ -12,6 +12,7 @@ import { computeStats } from './stats.js';
 import {
   SUPERMARKETS, SECTIONS, fetchShoppingList, addShoppingItem, updateShoppingItem, toggleShoppingItem,
   deleteShoppingItem, clearCheckedItems, fetchItemPrices, addItemPrice, deleteItemPrice,
+  PRICE_STORES, loadPriceCatalog, fetchMarketPrices, saveMarketPrice, deleteMarketPrice,
 } from './shopping.js';
 
 const loginView = document.getElementById('login-view');
@@ -27,6 +28,10 @@ let proactiveContent = [];
 let activeProactiveCategory = 'decoracio';
 let shoppingItems = [];
 let itemPrices = [];
+let marketPrices = [];
+let priceCatalog = null;
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 function showLoginError(message) {
   loginError.textContent = message;
@@ -84,7 +89,7 @@ if (!supabaseReady) {
 async function loadAll() {
   const since = new Date();
   since.setDate(since.getDate() - 30);
-  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'llista de la compra', 'preus de la compra'];
+  const labels = ['habitacions', 'tasques', 'historial', 'vida proactiva', 'llista de la compra', 'preus de la compra', 'preus escrits a ma', 'preus per kg'];
   const results = await Promise.allSettled([
     fetchRooms(),
     fetchTasks(),
@@ -92,8 +97,10 @@ async function loadAll() {
     fetchProactiveContent(),
     fetchShoppingList(),
     fetchItemPrices(),
+    fetchMarketPrices(),
+    loadPriceCatalog(),
   ]);
-  [rooms, tasks, completions, proactiveContent, shoppingItems, itemPrices] = results.map((r) =>
+  [rooms, tasks, completions, proactiveContent, shoppingItems, itemPrices, marketPrices, priceCatalog] = results.map((r) =>
     r.status === 'fulfilled' ? r.value : []
   );
   results.forEach((r, i) => {
@@ -108,6 +115,7 @@ async function loadAll() {
   renderProactive();
   renderStats();
   renderShoppingList();
+  renderPriceTable();
 }
 
 /* Tabs */
@@ -600,30 +608,44 @@ function formatQty(item) {
 
 function itemRowHtml(item) {
   return `
-    <label class="shopping-item ${item.checked ? 'checked' : ''}">
-      <input type="checkbox" data-shopping-id="${item.id}" ${item.checked ? 'checked' : ''}>
-      <span class="shopping-item-name">${item.item_name}</span>
-      <span class="badge">${formatQty(item)}</span>
-      ${item.note ? `<span class="shopping-item-note">${item.note}</span>` : ''}
-      <button type="button" class="ghost-btn" data-price-item="${item.id}">Preus</button>
-      <button type="button" class="delete-btn" data-shopping-delete="${item.id}">Elimina</button>
-    </label>`;
+    <div class="shopping-item ${item.checked ? 'checked' : ''}">
+      <label class="shopping-check">
+        <input type="checkbox" data-shopping-id="${item.id}" ${item.checked ? 'checked' : ''}>
+        <span class="shopping-item-name">${esc(item.item_name)}</span>
+      </label>
+      <span class="shopping-qty">${esc(formatQty(item))}</span>
+      ${item.note ? `<span class="shopping-item-note">${esc(item.note)}</span>` : ''}
+      <span class="shopping-item-actions">
+        <button type="button" class="edit-btn" data-price-item="${item.id}" title="Preus i súper on comprar-ho">Súper</button>
+        <button type="button" class="delete-btn" data-shopping-delete="${item.id}">Elimina</button>
+      </span>
+    </div>`;
+}
+
+const NO_SUPER = 'Sense súper triat';
+
+function superOrder(name) {
+  if (name === NO_SUPER) return -1;
+  const i = SUPERMARKETS.indexOf(name);
+  return i === -1 ? SUPERMARKETS.length : i;
 }
 
 function renderShoppingList() {
   const list = document.getElementById('shopping-list');
   const pending = shoppingItems.filter((i) => !i.checked);
   const checked = shoppingItems.filter((i) => i.checked);
-  document.getElementById('shopping-count').textContent = `${pending.length} pendents, ${checked.length} marcats`;
+  document.getElementById('shopping-count').textContent =
+    `${pending.length} per comprar${checked.length ? ` · ${checked.length} comprats` : ''}`;
+  document.getElementById('shopping-clear-btn').hidden = checked.length === 0;
 
   if (shoppingItems.length === 0) {
-    list.innerHTML = '<p class="empty-col">La llista esta buida.</p>';
+    list.innerHTML = '<p class="empty-state">La llista és buida. Afegeix-hi productes aquí dalt, o des de <strong>Preus per kg</strong> amb el botó +.</p>';
     return;
   }
 
   const bySuper = new Map();
   pending.forEach((item) => {
-    const superKey = item.chosen_supermarket || 'Súper per triar';
+    const superKey = item.chosen_supermarket || NO_SUPER;
     if (!bySuper.has(superKey)) bySuper.set(superKey, new Map());
     const bySection = bySuper.get(superKey);
     const sectionKey = item.section || 'Sense secció';
@@ -632,35 +654,28 @@ function renderShoppingList() {
   });
 
   let html = '';
-  for (const [superName, bySection] of bySuper) {
-    html += `<div class="shopping-group-title">${superName}</div>`;
+  [...bySuper.entries()].sort((a, b) => superOrder(a[0]) - superOrder(b[0])).forEach(([superName, bySection]) => {
+    const count = [...bySection.values()].reduce((n, items) => n + items.length, 0);
+    html += `<section class="shopping-group"><h3 class="shopping-group-title">${esc(superName)} <span class="col-count">${count}</span></h3>`;
     for (const [sectionName, items] of bySection) {
-      html += `<div class="shopping-section-title">${sectionName}</div>`;
-      html += items.map(itemRowHtml).join('');
+      html += `<div class="shopping-section-title">${esc(sectionName)}</div>` + items.map(itemRowHtml).join('');
     }
-  }
+    html += '</section>';
+  });
   if (checked.length) {
-    html += `<div class="shopping-group-title">Marcats</div>` + checked.map(itemRowHtml).join('');
+    html += `<section class="shopping-group done"><h3 class="shopping-group-title">Comprats <span class="col-count">${checked.length}</span></h3>${checked.map(itemRowHtml).join('')}</section>`;
   }
   list.innerHTML = html;
 
   list.querySelectorAll('[data-shopping-id]').forEach((cb) =>
     cb.addEventListener('change', () => handleToggleShopping(cb.dataset.shoppingId, cb.checked))
   );
-  list.querySelectorAll('[data-shopping-delete]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleDeleteShopping(btn.dataset.shoppingDelete);
-    });
-  });
-  list.querySelectorAll('[data-price-item]').forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      openPriceModal(btn.dataset.priceItem);
-    });
-  });
+  list.querySelectorAll('[data-shopping-delete]').forEach((btn) =>
+    btn.addEventListener('click', () => handleDeleteShopping(btn.dataset.shoppingDelete))
+  );
+  list.querySelectorAll('[data-price-item]').forEach((btn) =>
+    btn.addEventListener('click', () => openPriceModal(btn.dataset.priceItem))
+  );
 }
 
 async function handleToggleShopping(id, checked) {
@@ -724,6 +739,155 @@ document.getElementById('shopping-clear-btn').addEventListener('click', async ()
     showToast('No s\'han pogut netejar: ' + err.message, true);
   }
 });
+
+document.querySelectorAll('#shopping-subtabs button').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#shopping-subtabs button').forEach((b) => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.shop-subpanel').forEach((p) => { p.hidden = p.id !== `shop-panel-${btn.dataset.shoptab}`; });
+  });
+});
+
+/* Preus per kg */
+const CATEGORY_ORDER = ['Peix', 'Carn', 'Verdura', 'Fruita'];
+const CATEGORY_SECTION = { Peix: 'Peix', Carn: 'Carn', Verdura: 'Fruita i verdura', Fruita: 'Fruita i verdura' };
+const MONTHS_CA = ['gener', 'febrer', 'març', 'abril', 'maig', 'juny', 'juliol', 'agost', 'setembre', 'octubre', 'novembre', 'desembre'];
+const priceFmt = new Intl.NumberFormat('ca-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const STALE_DAYS = 14;
+
+function inSeason(product, month) {
+  return !product.mesos || product.mesos.includes(month);
+}
+
+function daysSince(iso) {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+
+function priceCells(product) {
+  return PRICE_STORES.map((store) => {
+    if (store.auto) {
+      const m = priceCatalog.preus?.mercadona?.[product.key];
+      return m ? { value: m.preu, unit: m.unitat, title: m.producte } : { value: null };
+    }
+    const row = marketPrices.find((p) => p.product_key === product.key && p.store === store.key);
+    return row ? { value: Number(row.price), unit: product.unitat, updatedAt: row.updated_at } : { value: null };
+  });
+}
+
+function cheapestIndex(product, cells) {
+  let best = -1;
+  cells.forEach((c, i) => {
+    if (c.value != null && c.unit === product.unitat && (best === -1 || c.value < cells[best].value)) best = i;
+  });
+  return best;
+}
+
+function priceCellHtml(product, store, cell, isCheapest) {
+  const cls = `num${isCheapest ? ' cheapest' : ''}`;
+  if (store.auto) {
+    const text = cell.value == null ? '<span class="muted">—</span>'
+      : priceFmt.format(cell.value) + (cell.unit !== product.unitat ? `<span class="unit-note">/${esc(cell.unit)}</span>` : '');
+    return `<td class="${cls}" title="${esc(cell.title || 'No en venen aquesta setmana')}">${text}</td>`;
+  }
+  const age = cell.updatedAt ? daysSince(cell.updatedAt) : null;
+  const ageText = age == null ? '' : age <= 0 ? 'avui' : age === 1 ? 'ahir' : `fa ${age} dies`;
+  return `<td class="${cls}${age > STALE_DAYS ? ' stale' : ''}">
+    <input class="price-input" inputmode="decimal" autocomplete="off" data-key="${product.key}" data-store="${store.key}"
+      value="${cell.value == null ? '' : priceFmt.format(cell.value)}" placeholder="—" aria-label="Preu de ${esc(product.nom)} a ${store.label}">
+    ${ageText ? `<span class="price-age">${ageText}</span>` : ''}
+  </td>`;
+}
+
+function renderPriceTable() {
+  const table = document.getElementById('prices-table');
+  const intro = document.getElementById('prices-intro');
+  if (!priceCatalog?.productes) {
+    table.innerHTML = '';
+    intro.textContent = "No s'han pogut carregar els preus.";
+    return;
+  }
+  const focused = document.activeElement?.classList.contains('price-input') ? document.activeElement.dataset : null;
+  const month = new Date().getMonth() + 1;
+  const seasonOnly = document.getElementById('prices-season').checked;
+  const updated = priceCatalog.preus?.actualitzat;
+  intro.textContent = `Preu per kg. Mercadona actualitzat el ${updated ? new Date(updated).toLocaleDateString('ca-ES') : '—'}.`
+    + (seasonOnly ? ` Productes de temporada de ${MONTHS_CA[month - 1]}.` : '');
+
+  const cols = PRICE_STORES.length + 2;
+  let body = '';
+  CATEGORY_ORDER.forEach((cat) => {
+    const products = priceCatalog.productes.filter((p) => p.categoria === cat && (!seasonOnly || inSeason(p, month)));
+    if (!products.length) return;
+    body += `<tr class="cat-row"><th colspan="${cols}" scope="rowgroup">${cat}</th></tr>`;
+    products.forEach((p) => {
+      const cells = priceCells(p);
+      const comparable = cells.filter((c) => c.value != null && c.unit === p.unitat).length;
+      const best = comparable > 1 ? cheapestIndex(p, cells) : -1;
+      const offSeason = !inSeason(p, month);
+      body += `<tr class="${offSeason ? 'off-season' : ''}">
+        <th class="prod-col" scope="row">${esc(p.nom)}${p.unitat === 'ud' ? ' <span class="unit-note">per unitat</span>' : ''}${offSeason ? ' <span class="unit-note">fora de temporada</span>' : ''}</th>
+        ${cells.map((c, i) => priceCellHtml(p, PRICE_STORES[i], c, i === best)).join('')}
+        <td><button type="button" class="add-btn" data-add-product="${p.key}" title="Afegeix a la llista" aria-label="Afegeix ${esc(p.nom)} a la llista">+</button></td>
+      </tr>`;
+    });
+  });
+
+  table.innerHTML = `<thead><tr><th class="prod-col" scope="col">Producte</th>${PRICE_STORES.map((s) =>
+    `<th class="num" scope="col">${s.label}${s.auto ? '<span class="col-tag">auto</span>' : ''}${s.hint ? `<span class="col-hint">${s.hint}</span>` : ''}</th>`
+  ).join('')}<th scope="col"><span class="visually-hidden">Afegeix</span></th></tr></thead>
+    <tbody>${body || `<tr><td colspan="${cols}" class="empty-col">Cap producte de temporada aquest mes.</td></tr>`}</tbody>`;
+
+  table.querySelectorAll('.price-input').forEach((input) => {
+    input.addEventListener('change', () => handlePriceInput(input));
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+  });
+  table.querySelectorAll('[data-add-product]').forEach((btn) =>
+    btn.addEventListener('click', () => handleQuickAdd(btn.dataset.addProduct))
+  );
+  if (focused) {
+    table.querySelector(`.price-input[data-key="${focused.key}"][data-store="${focused.store}"]`)?.focus();
+  }
+}
+
+async function handlePriceInput(input) {
+  const { key, store } = input.dataset;
+  const raw = input.value.trim().replace(',', '.');
+  const others = marketPrices.filter((p) => !(p.product_key === key && p.store === store));
+  try {
+    if (raw === '') {
+      await deleteMarketPrice(key, store);
+      marketPrices = others;
+    } else {
+      const price = Number(raw);
+      if (!Number.isFinite(price) || price < 0) throw new Error('escriu un número, per exemple 3,45');
+      marketPrices = [...others, await saveMarketPrice(key, store, Math.round(price * 100) / 100)];
+    }
+  } catch (err) {
+    showToast("No s'ha pogut desar el preu: " + err.message, true);
+  }
+  renderPriceTable();
+}
+
+async function handleQuickAdd(key) {
+  const product = priceCatalog.productes.find((p) => p.key === key);
+  const best = cheapestIndex(product, priceCells(product));
+  const store = best === -1 ? null : PRICE_STORES[best].label;
+  try {
+    const created = await addShoppingItem({
+      item_name: product.nom,
+      quantity: 1,
+      unit: product.unitat === 'kg' ? 'kg' : null,
+      section: CATEGORY_SECTION[product.categoria],
+      chosen_supermarket: store,
+    });
+    shoppingItems.push(created);
+    renderShoppingList();
+    showToast(`${product.nom} afegit a la llista${store ? ` (${store})` : ''}.`);
+  } catch (err) {
+    showToast("No s'ha pogut afegir: " + err.message, true);
+  }
+}
+
+document.getElementById('prices-season').addEventListener('change', renderPriceTable);
 
 /* Preus per super */
 const priceModal = document.getElementById('price-modal');

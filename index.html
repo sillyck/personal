@@ -76,23 +76,43 @@
     </section>
 
     <section id="tab-compra" class="tab-panel" hidden>
-      <form id="shopping-form" class="shopping-add-row">
-        <input type="text" id="shopping-item" placeholder="Que cal comprar?" required>
-        <span class="qty-stepper">
-          <button type="button" id="qty-minus" class="ghost-btn">-</button>
-          <input type="number" id="shopping-qty" value="1" min="0" step="any">
-          <button type="button" id="qty-plus" class="ghost-btn">+</button>
-        </span>
-        <input type="text" id="shopping-unit" placeholder="unitat (kg, L...)" class="unit-input">
-        <select id="shopping-section"></select>
-        <input type="text" id="shopping-note" placeholder="Nota (opcional)">
-        <button type="submit" class="primary-btn">Afegeix</button>
-      </form>
-      <div class="panel-header">
-        <span class="field-label" id="shopping-count"></span>
-        <button type="button" id="shopping-clear-btn" class="ghost-btn">Neteja marcats</button>
+      <nav class="subtabs" id="shopping-subtabs">
+        <button type="button" data-shoptab="llista" class="active">Llista</button>
+        <button type="button" data-shoptab="preus">Preus per kg</button>
+      </nav>
+
+      <div id="shop-panel-llista" class="shop-subpanel">
+        <form id="shopping-form" class="shopping-add">
+          <div class="shopping-add-main">
+            <input type="text" id="shopping-item" placeholder="Què cal comprar?" required autocomplete="off">
+            <button type="submit" class="primary-btn">Afegeix</button>
+          </div>
+          <div class="shopping-add-details">
+            <span class="qty-stepper">
+              <button type="button" id="qty-minus" class="ghost-btn" aria-label="Menys quantitat">−</button>
+              <input type="number" id="shopping-qty" value="1" min="0" step="any" aria-label="Quantitat">
+              <button type="button" id="qty-plus" class="ghost-btn" aria-label="Més quantitat">+</button>
+            </span>
+            <input type="text" id="shopping-unit" placeholder="Unitat (kg, L...)" class="unit-input">
+            <select id="shopping-section" aria-label="Secció"></select>
+            <input type="text" id="shopping-note" placeholder="Nota (opcional)" class="note-input">
+          </div>
+        </form>
+        <div class="shopping-toolbar">
+          <span id="shopping-count"></span>
+          <button type="button" id="shopping-clear-btn" class="ghost-btn">Neteja comprats</button>
+        </div>
+        <div id="shopping-list"></div>
       </div>
-      <div id="shopping-list"></div>
+
+      <div id="shop-panel-preus" class="shop-subpanel" hidden>
+        <div class="prices-header">
+          <p class="map-intro" id="prices-intro"></p>
+          <label class="checkbox-inline"><input type="checkbox" id="prices-season" checked> Només de temporada</label>
+        </div>
+        <div class="prices-table-wrap"><table class="prices-table" id="prices-table"></table></div>
+        <p class="prices-legend">Mercadona s'actualitza sola cada dilluns. La resta les omples vosaltres: clica una casella, escriu el preu i prem Enter (buit per esborrar). En verd, el més barat de cada fila. El botó + afegeix el producte a la llista, al súper més barat.</p>
+      </div>
     </section>
   </main>
 </div>

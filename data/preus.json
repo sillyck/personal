@@ -1,0 +1,97 @@
+{
+  "actualitzat": "2026-09-30",
+  "mercadona": {
+    "salmo": {
+      "preu": 9.95,
+      "unitat": "kg",
+      "producte": "Salmón a rodajas"
+    },
+    "llenguado": {
+      "preu": 35.0,
+      "unitat": "kg",
+      "producte": "Lenguado rubio"
+    },
+    "lluc": {
+      "preu": 26.95,
+      "unitat": "kg",
+      "producte": "Porciones de merluza"
+    },
+    "rap": null,
+    "pollastre": {
+      "preu": 6.2,
+      "unitat": "kg",
+      "producte": "Pechugas enteras familiar de pollo"
+    },
+    "hamburguesa_vedella": {
+      "preu": 10.93,
+      "unitat": "kg",
+      "producte": "Burger de vacuno"
+    },
+    "hamburguesa_pollastre": {
+      "preu": 7.04,
+      "unitat": "kg",
+      "producte": "Burger de pollo"
+    },
+    "tomaquet_pera": {
+      "preu": 2.0,
+      "unitat": "kg",
+      "producte": "Tomate pera"
+    },
+    "tomaquet_cherry": {
+      "preu": 4.4,
+      "unitat": "kg",
+      "producte": "Tomates cherry"
+    },
+    "enciam_iceberg": {
+      "preu": 1.05,
+      "unitat": "ud",
+      "producte": "Lechuga Iceberg"
+    },
+    "pebrot_vermell": {
+      "preu": 2.5,
+      "unitat": "kg",
+      "producte": "Pimiento rojo"
+    },
+    "pebrot_verd": {
+      "preu": 2.5,
+      "unitat": "kg",
+      "producte": "Pimiento verde freír"
+    },
+    "carbasso": {
+      "preu": 1.9,
+      "unitat": "kg",
+      "producte": "Calabacín verde"
+    },
+    "pastanaga": {
+      "preu": 1.2,
+      "unitat": "kg",
+      "producte": "Zanahorias"
+    },
+    "platan": {
+      "preu": 2.5,
+      "unitat": "kg",
+      "producte": "Plátano de Canarias IGP"
+    },
+    "kiwi": {
+      "preu": 4.55,
+      "unitat": "kg",
+      "producte": "Kiwis verdes"
+    },
+    "taronja": {
+      "preu": 1.95,
+      "unitat": "kg",
+      "producte": "Naranjas"
+    },
+    "maduixa": {
+      "preu": 7.5,
+      "unitat": "kg",
+      "producte": "Fresas"
+    },
+    "pressec": {
+      "preu": 3.3,
+      "unitat": "kg",
+      "producte": "Melocotón amarillo"
+    },
+    "sindria": null
+  }
+}
