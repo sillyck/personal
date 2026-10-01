@@ -42,12 +42,15 @@ def main():
         browser = pw.chromium.launch()
         page = browser.new_context(user_agent=UA, locale="ca-ES").new_page()
         for p in productes:
-            try:
-                resultat[p["key"]] = millor(p, candidats(p, productes_cerca(page, p["esclat"]["cerca"])))
-            except Exception as err:
-                print(f"  {p['key']}: {str(err).splitlines()[0]}", file=sys.stderr)
-                resultat[p["key"]] = None
-            page.wait_for_timeout(1500)
+            resultat[p["key"]] = None
+            for intent in range(3):
+                try:
+                    resultat[p["key"]] = millor(p, candidats(p, productes_cerca(page, p["esclat"]["cerca"])))
+                    break
+                except Exception as err:
+                    print(f"  {p['key']} (intent {intent + 1}): {str(err).splitlines()[0]}", file=sys.stderr)
+                    page.wait_for_timeout(20000)
+            page.wait_for_timeout(6000)
         browser.close()
     if not any(resultat.values()):
         print("Esclat: cap preu (probable bloqueig del WAF); no es toca preus.json", file=sys.stderr)
