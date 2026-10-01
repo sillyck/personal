@@ -1,8 +1,7 @@
 """Preus de Bonpreu Esclat. La botiga online esta darrere d'AWS WAF: cal un navegador real
 (Playwright) que resolgui el repte; despres l'estat inicial de la pagina de cerca porta els productes."""
-import json
-import re
 import sys
+import time
 import urllib.parse
 
 from playwright.sync_api import sync_playwright
@@ -13,15 +12,17 @@ SEARCH = "https://www.compraonline.bonpreuesclat.cat/search?q="
 EXCLOU = ("fumat", "fumada", "marinad", "empanad", "cuit", "cuinat", "conserva", "congelat", "precuinat", "sec")
 
 
-def productes_cerca(page, text):
-    """Un cop el navegador ha passat el WAF, les cerques es fan amb fetch dins la mateixa pagina
-    (mateixes cookies) i es llegeix l'estat inicial del HTML, sense tornar a navegar."""
-    html = page.evaluate("async (u) => { const r = await fetch(u); return r.status + '|' + await r.text(); }", SEARCH + urllib.parse.quote(text))
-    estat, _, cos = html.partition("|")
-    m = re.search(r"window\.__INITIAL_STATE__\s*=\s*(\{.*?\})\s*;?\s*</script>", cos, re.S)
-    if not m:
-        raise RuntimeError(f"HTTP {estat}, {len(cos)} bytes sense estat inicial (WAF?)")
-    return list(json.loads(m.group(1))["data"]["products"]["productEntities"].values())
+def productes_cerca(browser, text):
+    """El WAF nomes deixa passar la primera navegacio d'una sessio: cada cerca fa servir un context nou."""
+    ctx = browser.new_context(user_agent=UA, locale="ca-ES")
+    try:
+        page = ctx.new_page()
+        page.goto(SEARCH + urllib.parse.quote(text), wait_until="domcontentloaded", timeout=60000)
+        page.wait_for_function("window.__INITIAL_STATE__ !== undefined", timeout=60000)
+        estat = page.evaluate("window.__INITIAL_STATE__.data.products.productEntities")
+        return list((estat or {}).values())
+    finally:
+        ctx.close()
 
 
 def candidats(producte, entitats):
@@ -47,19 +48,16 @@ def main():
     resultat = {}
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
-        page = browser.new_context(user_agent=UA, locale="ca-ES").new_page()
-        page.goto("https://www.compraonline.bonpreuesclat.cat/", wait_until="domcontentloaded", timeout=60000)
-        page.wait_for_function("window.__INITIAL_STATE__ !== undefined", timeout=60000)
         for p in productes:
             resultat[p["key"]] = None
             for intent in range(3):
                 try:
-                    resultat[p["key"]] = millor(p, candidats(p, productes_cerca(page, p["esclat"]["cerca"])))
+                    resultat[p["key"]] = millor(p, candidats(p, productes_cerca(browser, p["esclat"]["cerca"])))
                     break
                 except Exception as err:
                     print(f"  {p['key']} (intent {intent + 1}): {str(err).splitlines()[0]}", file=sys.stderr)
-                    page.wait_for_timeout(10000)
-            page.wait_for_timeout(2000)
+                    time.sleep(10)
+            time.sleep(3)
         browser.close()
     if not any(resultat.values()):
         print("Esclat: cap preu (probable bloqueig del WAF); no es toca preus.json", file=sys.stderr)
