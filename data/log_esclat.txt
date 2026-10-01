@@ -1,58 +1,36 @@
-  llenguado (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  llenguado (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  llenguado (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  lluc (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  lluc (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  lluc (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  rap (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  rap (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  rap (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pollastre (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pollastre (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pollastre (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  hamburguesa_vedella (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  hamburguesa_vedella (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  hamburguesa_vedella (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  hamburguesa_pollastre (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  hamburguesa_pollastre (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  hamburguesa_pollastre (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  tomaquet_pera (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  tomaquet_pera (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  tomaquet_pera (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  tomaquet_cherry (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  tomaquet_cherry (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  tomaquet_cherry (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  enciam_iceberg (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  enciam_iceberg (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  enciam_iceberg (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pebrot_vermell (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pebrot_vermell (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pebrot_vermell (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pebrot_verd (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pebrot_verd (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pebrot_verd (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  carbasso (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  carbasso (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  carbasso (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pastanaga (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pastanaga (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pastanaga (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  platan (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  platan (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  platan (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  kiwi (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  kiwi (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  kiwi (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  taronja (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  taronja (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  taronja (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  maduixa (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  maduixa (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  maduixa (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pressec (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pressec (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  pressec (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  sindria (intent 1): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  sindria (intent 2): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-  sindria (intent 3): HTTP 405, 2603 bytes sense estat inicial (WAF?)
-esclat: 1/20 productes amb preu
+  hamburguesa_vedella (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  hamburguesa_vedella (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  hamburguesa_vedella (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
+  hamburguesa_pollastre (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  hamburguesa_pollastre (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  tomaquet_pera (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  tomaquet_pera (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  tomaquet_pera (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
+  tomaquet_cherry (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  tomaquet_cherry (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  enciam_iceberg (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  enciam_iceberg (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  enciam_iceberg (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
+  pebrot_vermell (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  pebrot_vermell (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  pebrot_verd (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  pebrot_verd (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  pebrot_verd (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
+  carbasso (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  carbasso (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  platan (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  platan (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  platan (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
+  kiwi (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  kiwi (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  taronja (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  taronja (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  taronja (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
+  maduixa (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  maduixa (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  pressec (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  pressec (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  pressec (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
+  sindria (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  sindria (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+esclat: 10/20 productes amb preu

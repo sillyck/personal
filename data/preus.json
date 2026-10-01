@@ -210,21 +210,57 @@
       "unitat": "kg",
       "producte": "FROYA Salmó Back Loin premium en envàs de 180 grams"
     },
-    "llenguado": null,
-    "lluc": null,
-    "rap": null,
-    "pollastre": null,
+    "llenguado": {
+      "preu": 29.99,
+      "unitat": "kg",
+      "producte": "Llenguado"
+    },
+    "lluc": {
+      "preu": 16.61,
+      "unitat": "kg",
+      "producte": "Mini hamburguesa de Lluç"
+    },
+    "rap": {
+      "preu": 14.99,
+      "unitat": "kg",
+      "producte": "Rap sencer"
+    },
+    "pollastre": {
+      "preu": 7.25,
+      "unitat": "kg",
+      "producte": "BONPREU Pit de pollastre al buit"
+    },
     "hamburguesa_vedella": null,
-    "hamburguesa_pollastre": null,
+    "hamburguesa_pollastre": {
+      "preu": 11.65,
+      "unitat": "kg",
+      "producte": "BONPREU Hamburguesa de pollastre"
+    },
     "tomaquet_pera": null,
     "tomaquet_cherry": null,
     "enciam_iceberg": null,
-    "pebrot_vermell": null,
+    "pebrot_vermell": {
+      "preu": 2.99,
+      "unitat": "kg",
+      "producte": "Pebrot dolç vermell 1 u."
+    },
     "pebrot_verd": null,
-    "carbasso": null,
-    "pastanaga": null,
+    "carbasso": {
+      "preu": 1.69,
+      "unitat": "kg",
+      "producte": "Carbassó  1 u."
+    },
+    "pastanaga": {
+      "preu": 1.39,
+      "unitat": "kg",
+      "producte": "Pastanaga 1 u."
+    },
     "platan": null,
-    "kiwi": null,
+    "kiwi": {
+      "preu": 6.98,
+      "unitat": "kg",
+      "producte": "ZESPRI Kiwi verd en safata de 500 g"
+    },
     "taronja": null,
     "maduixa": null,
     "pressec": null,
