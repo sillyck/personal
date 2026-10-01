@@ -4,9 +4,10 @@ export const SUPERMARKETS = ['Mercadona', 'Esclat', 'Dia', 'Aldi', 'Lidl', 'Merc
 
 export const PRICE_STORES = [
   { key: 'mercadona', label: 'Mercadona', auto: true },
-  { key: 'esclat', label: 'Esclat' },
+  { key: 'esclat', label: 'Esclat', auto: true, manual: true },
+  { key: 'bonarea', label: 'BonÀrea', auto: true },
   { key: 'dia', label: 'Dia' },
-  { key: 'aldi', label: 'Aldi' },
+  { key: 'aldi', label: 'Aldi', auto: true, manual: true },
   { key: 'lidl', label: 'Lidl' },
   { key: 'mercat', label: 'Mercat', hint: 'setmana passada' },
 ];

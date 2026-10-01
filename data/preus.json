@@ -89,5 +89,114 @@
       "producte": "Melocotón amarillo"
     },
     "sindria": null
+  },
+  "dates": {
+    "mercadona": "2026-10-01",
+    "aldi": "2026-10-01",
+    "bonarea": "2026-10-01"
+  },
+  "aldi": {
+    "salmo": null,
+    "llenguado": null,
+    "lluc": null,
+    "rap": null,
+    "pollastre": {
+      "preu": 5.49,
+      "unitat": "kg",
+      "producte": "Pechuga de pollo formato familiar"
+    },
+    "hamburguesa_vedella": null,
+    "hamburguesa_pollastre": null,
+    "tomaquet_pera": null,
+    "tomaquet_cherry": null,
+    "enciam_iceberg": null,
+    "pebrot_vermell": null,
+    "pebrot_verd": null,
+    "carbasso": null,
+    "pastanaga": null,
+    "platan": null,
+    "kiwi": null,
+    "taronja": null,
+    "maduixa": null,
+    "pressec": {
+      "preu": 1.99,
+      "unitat": "kg",
+      "producte": "Melocotón amarillo"
+    },
+    "sindria": null
+  },
+  "bonarea": {
+    "salmo": null,
+    "llenguado": null,
+    "lluc": null,
+    "rap": null,
+    "pollastre": {
+      "preu": 6.85,
+      "unitat": "kg",
+      "producte": "Pechuga de pollo amarillo entera"
+    },
+    "hamburguesa_vedella": null,
+    "hamburguesa_pollastre": {
+      "preu": 7.72,
+      "unitat": "kg",
+      "producte": "Hamburguesa extra de pollo 4 u."
+    },
+    "tomaquet_pera": {
+      "preu": 4.1,
+      "unitat": "kg",
+      "producte": "Tomate pera"
+    },
+    "tomaquet_cherry": {
+      "preu": 6.4,
+      "unitat": "kg",
+      "producte": "Tomate cherry"
+    },
+    "enciam_iceberg": {
+      "preu": 1.5,
+      "unitat": "ud",
+      "producte": "Lechuga iceberg"
+    },
+    "pebrot_vermell": {
+      "preu": 5.35,
+      "unitat": "kg",
+      "producte": "Pimiento rojo"
+    },
+    "pebrot_verd": {
+      "preu": 4.2,
+      "unitat": "kg",
+      "producte": "Pimiento verde"
+    },
+    "carbasso": {
+      "preu": 2.89,
+      "unitat": "kg",
+      "producte": "Calabacín"
+    },
+    "pastanaga": {
+      "preu": 1.45,
+      "unitat": "kg",
+      "producte": "Zanahoria bolsa"
+    },
+    "platan": {
+      "preu": 2.5,
+      "unitat": "kg",
+      "producte": "Plátano de Canarias"
+    },
+    "kiwi": {
+      "preu": 5.75,
+      "unitat": "kg",
+      "producte": "Kiwi green bandeja"
+    },
+    "taronja": {
+      "preu": 2.15,
+      "unitat": "kg",
+      "producte": "Naranja malla"
+    },
+    "maduixa": null,
+    "pressec": {
+      "preu": 3.25,
+      "unitat": "kg",
+      "producte": "Melocotón amarillo"
+    },
+    "sindria": null
   }
 }

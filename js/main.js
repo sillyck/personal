@@ -765,8 +765,9 @@ function daysSince(iso) {
 function priceCells(product) {
   return PRICE_STORES.map((store) => {
     if (store.auto) {
-      const m = priceCatalog.preus?.mercadona?.[product.key];
-      return m ? { value: m.preu, unit: m.unitat, title: m.producte } : { value: null };
+      const m = priceCatalog.preus?.[store.key]?.[product.key];
+      if (m) return { value: m.preu, unit: m.unitat, title: m.producte, auto: true };
+      if (!store.manual) return { value: null, auto: true };
     }
     const row = marketPrices.find((p) => p.product_key === product.key && p.store === store.key);
     return row ? { value: Number(row.price), unit: product.unitat, updatedAt: row.updated_at } : { value: null };
@@ -783,7 +784,7 @@ function cheapestIndex(product, cells) {
 
 function priceCellHtml(product, store, cell, isCheapest) {
   const cls = `num${isCheapest ? ' cheapest' : ''}`;
-  if (store.auto) {
+  if (cell.auto) {
     const text = cell.value == null ? '<span class="muted">—</span>'
       : priceFmt.format(cell.value) + (cell.unit !== product.unitat ? `<span class="unit-note">/${esc(cell.unit)}</span>` : '');
     return `<td class="${cls}" title="${esc(cell.title || 'No en venen aquesta setmana')}">${text}</td>`;
@@ -809,7 +810,7 @@ function renderPriceTable() {
   const month = new Date().getMonth() + 1;
   const seasonOnly = document.getElementById('prices-season').checked;
   const updated = priceCatalog.preus?.actualitzat;
-  intro.textContent = `Preu per kg. Mercadona actualitzat el ${updated ? new Date(updated).toLocaleDateString('ca-ES') : '—'}.`
+  intro.textContent = `Preu per kg. Preus automàtics actualitzats el ${updated ? new Date(updated).toLocaleDateString('ca-ES') : '—'}.`
     + (seasonOnly ? ` Productes de temporada de ${MONTHS_CA[month - 1]}.` : '');
 
   const cols = PRICE_STORES.length + 2;

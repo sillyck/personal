@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths:
-      - scripts/preus_mercadona.py
+      - scripts/**
       - data/productes.json
       - .github/workflows/preus.yml
 
@@ -19,11 +19,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scripts/preus_mercadona.py
+      - name: Mercadona, Aldi i BonArea (nomes peticions HTTP)
+        working-directory: scripts
+        run: |
+          for botiga in mercadona aldi bonarea; do
+            python3 preus_$botiga.py || echo "::warning::$botiga ha fallat, es conserven els preus anteriors"
+          done
+      - name: Bonpreu Esclat (navegador real, pot ser bloquejat pel WAF)
+        continue-on-error: true
+        working-directory: scripts
+        run: |
+          pip install playwright
+          python3 -m playwright install --with-deps chromium
+          python3 preus_esclat.py
       - name: Desa els preus si han canviat
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/preus.json
-          git diff --cached --quiet || git commit -m "Preus Mercadona $(date -u +%F)"
+          git diff --cached --quiet || git commit -m "Preus $(date -u +%F)"
+          git pull --rebase -q origin main
           git push

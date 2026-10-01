@@ -1,45 +1,477 @@
 [
-  { "key": "salmo", "nom": "Salmó", "categoria": "Peix", "unitat": "kg", "mesos": null,
-    "mercadona": { "categories": [31], "inclou": ["salmon"], "exclou": ["ahumado"] } },
-  { "key": "llenguado", "nom": "Llenguado", "categoria": "Peix", "unitat": "kg", "mesos": null,
-    "mercadona": { "categories": [31], "inclou": ["lenguado"], "exclou": [] } },
-  { "key": "lluc", "nom": "Lluç", "categoria": "Peix", "unitat": "kg", "mesos": null,
-    "mercadona": { "categories": [31], "inclou": ["merluza"], "exclou": ["rebozada", "langostino"] } },
-  { "key": "rap", "nom": "Rap", "categoria": "Peix", "unitat": "kg", "mesos": null,
-    "mercadona": { "categories": [31], "inclou": ["rape"], "exclou": [] } },
-
-  { "key": "pollastre", "nom": "Pit de pollastre", "categoria": "Carn", "unitat": "kg", "mesos": null,
-    "mercadona": { "categories": [38], "inclou": ["pechuga", "pollo"], "exclou": ["marinad", "empanad"] } },
-  { "key": "hamburguesa_vedella", "nom": "Hamburguesa de vedella", "categoria": "Carn", "unitat": "kg", "mesos": null,
-    "mercadona": { "categories": [44], "inclou": ["burger|hamburguesa", "vacuno"], "exclou": ["cerdo", "mini"] } },
-  { "key": "hamburguesa_pollastre", "nom": "Hamburguesa de pollastre", "categoria": "Carn", "unitat": "kg", "mesos": null,
-    "mercadona": { "categories": [44], "inclou": ["burger|hamburguesa", "pollo"], "exclou": ["crunchy", "mini"] } },
-
-  { "key": "tomaquet_pera", "nom": "Tomàquet de pera", "categoria": "Verdura", "unitat": "kg", "mesos": [6, 7, 8, 9, 10],
-    "mercadona": { "categories": [29], "inclou": ["tomate", "pera"], "exclou": ["cherry", "kumato"] } },
-  { "key": "tomaquet_cherry", "nom": "Tomàquet cherry", "categoria": "Verdura", "unitat": "kg", "mesos": [6, 7, 8, 9, 10],
-    "mercadona": { "categories": [29], "inclou": ["cherry"], "exclou": ["kumato", "rama"] } },
-  { "key": "enciam_iceberg", "nom": "Enciam iceberg", "categoria": "Verdura", "unitat": "ud", "mesos": null,
-    "mercadona": { "categories": [28], "inclou": ["iceberg"], "exclou": ["cortada"] } },
-  { "key": "pebrot_vermell", "nom": "Pebrot vermell", "categoria": "Verdura", "unitat": "kg", "mesos": [7, 8, 9, 10, 11],
-    "mercadona": { "categories": [29], "inclou": ["pimiento rojo"], "exclou": [] } },
-  { "key": "pebrot_verd", "nom": "Pebrot verd", "categoria": "Verdura", "unitat": "kg", "mesos": [6, 7, 8, 9, 10],
-    "mercadona": { "categories": [29], "inclou": ["pimiento verde"], "exclou": [] } },
-  { "key": "carbasso", "nom": "Carbassó", "categoria": "Verdura", "unitat": "kg", "mesos": [5, 6, 7, 8, 9, 10],
-    "mercadona": { "categories": [29], "inclou": ["calabacin"], "exclou": [] } },
-  { "key": "pastanaga", "nom": "Pastanaga", "categoria": "Verdura", "unitat": "kg", "mesos": null,
-    "mercadona": { "categories": [29], "inclou": ["zanahoria"], "exclou": ["palitos", "rallada"] } },
-
-  { "key": "platan", "nom": "Plàtan", "categoria": "Fruita", "unitat": "kg", "mesos": null,
-    "mercadona": { "categories": [27], "inclou": ["platano"], "exclou": ["macho"] } },
-  { "key": "kiwi", "nom": "Kiwi", "categoria": "Fruita", "unitat": "kg", "mesos": [11, 12, 1, 2, 3, 4],
-    "mercadona": { "categories": [27], "inclou": ["kiwi"], "exclou": ["amarillo"] } },
-  { "key": "taronja", "nom": "Taronja", "categoria": "Fruita", "unitat": "kg", "mesos": [11, 12, 1, 2, 3, 4, 5],
-    "mercadona": { "categories": [27], "inclou": ["naranja"], "exclou": [] } },
-  { "key": "maduixa", "nom": "Maduixa", "categoria": "Fruita", "unitat": "kg", "mesos": [2, 3, 4, 5, 6],
-    "mercadona": { "categories": [27], "inclou": ["fresa"], "exclou": [] } },
-  { "key": "pressec", "nom": "Préssec", "categoria": "Fruita", "unitat": "kg", "mesos": [6, 7, 8, 9],
-    "mercadona": { "categories": [27], "inclou": ["melocoton"], "exclou": [] } },
-  { "key": "sindria", "nom": "Síndria", "categoria": "Fruita", "unitat": "kg", "mesos": [6, 7, 8, 9],
-    "mercadona": { "categories": [27], "inclou": ["sandia"], "exclou": [] } }
+  {
+    "key": "salmo",
+    "nom": "Salmó",
+    "categoria": "Peix",
+    "unitat": "kg",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        31
+      ],
+      "inclou": [
+        "salmon"
+      ],
+      "exclou": [
+        "ahumado"
+      ]
+    },
+    "esclat": {
+      "cerca": "salmó"
+    }
+  },
+  {
+    "key": "llenguado",
+    "nom": "Llenguado",
+    "categoria": "Peix",
+    "unitat": "kg",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        31
+      ],
+      "inclou": [
+        "lenguado"
+      ],
+      "exclou": []
+    },
+    "esclat": {
+      "cerca": "llenguado"
+    }
+  },
+  {
+    "key": "lluc",
+    "nom": "Lluç",
+    "categoria": "Peix",
+    "unitat": "kg",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        31
+      ],
+      "inclou": [
+        "merluza"
+      ],
+      "exclou": [
+        "rebozada",
+        "langostino"
+      ]
+    },
+    "esclat": {
+      "cerca": "lluç"
+    }
+  },
+  {
+    "key": "rap",
+    "nom": "Rap",
+    "categoria": "Peix",
+    "unitat": "kg",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        31
+      ],
+      "inclou": [
+        "rape"
+      ],
+      "exclou": []
+    },
+    "esclat": {
+      "cerca": "rap"
+    }
+  },
+  {
+    "key": "pollastre",
+    "nom": "Pit de pollastre",
+    "categoria": "Carn",
+    "unitat": "kg",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        38
+      ],
+      "inclou": [
+        "pechuga",
+        "pollo"
+      ],
+      "exclou": [
+        "marinad",
+        "empanad"
+      ]
+    },
+    "esclat": {
+      "cerca": "pit de pollastre"
+    }
+  },
+  {
+    "key": "hamburguesa_vedella",
+    "nom": "Hamburguesa de vedella",
+    "categoria": "Carn",
+    "unitat": "kg",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        44
+      ],
+      "inclou": [
+        "burger|hamburguesa",
+        "vacuno"
+      ],
+      "exclou": [
+        "cerdo",
+        "mini"
+      ]
+    },
+    "esclat": {
+      "cerca": "hamburguesa vedella"
+    }
+  },
+  {
+    "key": "hamburguesa_pollastre",
+    "nom": "Hamburguesa de pollastre",
+    "categoria": "Carn",
+    "unitat": "kg",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        44
+      ],
+      "inclou": [
+        "burger|hamburguesa",
+        "pollo"
+      ],
+      "exclou": [
+        "crunchy",
+        "mini"
+      ]
+    },
+    "esclat": {
+      "cerca": "hamburguesa pollastre"
+    }
+  },
+  {
+    "key": "tomaquet_pera",
+    "nom": "Tomàquet de pera",
+    "categoria": "Verdura",
+    "unitat": "kg",
+    "mesos": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "mercadona": {
+      "categories": [
+        29
+      ],
+      "inclou": [
+        "tomate",
+        "pera"
+      ],
+      "exclou": [
+        "cherry",
+        "kumato"
+      ]
+    },
+    "esclat": {
+      "cerca": "tomàquet pera"
+    }
+  },
+  {
+    "key": "tomaquet_cherry",
+    "nom": "Tomàquet cherry",
+    "categoria": "Verdura",
+    "unitat": "kg",
+    "mesos": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "mercadona": {
+      "categories": [
+        29
+      ],
+      "inclou": [
+        "cherry"
+      ],
+      "exclou": [
+        "kumato",
+        "rama"
+      ]
+    },
+    "esclat": {
+      "cerca": "tomàquet cherry"
+    }
+  },
+  {
+    "key": "enciam_iceberg",
+    "nom": "Enciam iceberg",
+    "categoria": "Verdura",
+    "unitat": "ud",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        28
+      ],
+      "inclou": [
+        "iceberg"
+      ],
+      "exclou": [
+        "cortada"
+      ]
+    },
+    "esclat": {
+      "cerca": "enciam iceberg"
+    }
+  },
+  {
+    "key": "pebrot_vermell",
+    "nom": "Pebrot vermell",
+    "categoria": "Verdura",
+    "unitat": "kg",
+    "mesos": [
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "mercadona": {
+      "categories": [
+        29
+      ],
+      "inclou": [
+        "pimiento rojo"
+      ],
+      "exclou": []
+    },
+    "esclat": {
+      "cerca": "pebrot vermell"
+    }
+  },
+  {
+    "key": "pebrot_verd",
+    "nom": "Pebrot verd",
+    "categoria": "Verdura",
+    "unitat": "kg",
+    "mesos": [
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "mercadona": {
+      "categories": [
+        29
+      ],
+      "inclou": [
+        "pimiento verde"
+      ],
+      "exclou": []
+    },
+    "esclat": {
+      "cerca": "pebrot verd"
+    }
+  },
+  {
+    "key": "carbasso",
+    "nom": "Carbassó",
+    "categoria": "Verdura",
+    "unitat": "kg",
+    "mesos": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "mercadona": {
+      "categories": [
+        29
+      ],
+      "inclou": [
+        "calabacin"
+      ],
+      "exclou": []
+    },
+    "esclat": {
+      "cerca": "carbassó"
+    }
+  },
+  {
+    "key": "pastanaga",
+    "nom": "Pastanaga",
+    "categoria": "Verdura",
+    "unitat": "kg",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        29
+      ],
+      "inclou": [
+        "zanahoria"
+      ],
+      "exclou": [
+        "palitos",
+        "rallada"
+      ]
+    },
+    "esclat": {
+      "cerca": "pastanaga"
+    }
+  },
+  {
+    "key": "platan",
+    "nom": "Plàtan",
+    "categoria": "Fruita",
+    "unitat": "kg",
+    "mesos": null,
+    "mercadona": {
+      "categories": [
+        27
+      ],
+      "inclou": [
+        "platano"
+      ],
+      "exclou": [
+        "macho"
+      ]
+    },
+    "esclat": {
+      "cerca": "plàtan"
+    }
+  },
+  {
+    "key": "kiwi",
+    "nom": "Kiwi",
+    "categoria": "Fruita",
+    "unitat": "kg",
+    "mesos": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4
+    ],
+    "mercadona": {
+      "categories": [
+        27
+      ],
+      "inclou": [
+        "kiwi"
+      ],
+      "exclou": [
+        "amarillo"
+      ]
+    },
+    "esclat": {
+      "cerca": "kiwi"
+    }
+  },
+  {
+    "key": "taronja",
+    "nom": "Taronja",
+    "categoria": "Fruita",
+    "unitat": "kg",
+    "mesos": [
+      11,
+      12,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "mercadona": {
+      "categories": [
+        27
+      ],
+      "inclou": [
+        "naranja"
+      ],
+      "exclou": []
+    },
+    "esclat": {
+      "cerca": "taronja"
+    }
+  },
+  {
+    "key": "maduixa",
+    "nom": "Maduixa",
+    "categoria": "Fruita",
+    "unitat": "kg",
+    "mesos": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "mercadona": {
+      "categories": [
+        27
+      ],
+      "inclou": [
+        "fresa"
+      ],
+      "exclou": []
+    },
+    "esclat": {
+      "cerca": "maduixa"
+    }
+  },
+  {
+    "key": "pressec",
+    "nom": "Préssec",
+    "categoria": "Fruita",
+    "unitat": "kg",
+    "mesos": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "mercadona": {
+      "categories": [
+        27
+      ],
+      "inclou": [
+        "melocoton"
+      ],
+      "exclou": []
+    },
+    "esclat": {
+      "cerca": "préssec"
+    }
+  },
+  {
+    "key": "sindria",
+    "nom": "Síndria",
+    "categoria": "Fruita",
+    "unitat": "kg",
+    "mesos": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "mercadona": {
+      "categories": [
+        27
+      ],
+      "inclou": [
+        "sandia"
+      ],
+      "exclou": []
+    },
+    "esclat": {
+      "cerca": "síndria"
+    }
+  }
 ]
