@@ -28,15 +28,16 @@ jobs:
       - name: Bonpreu Esclat (navegador real, pot ser bloquejat pel WAF)
         continue-on-error: true
         working-directory: scripts
+        shell: bash
         run: |
           pip install playwright
           python3 -m playwright install --with-deps chromium
-          python3 preus_esclat.py
+          python3 preus_esclat.py 2>&1 | tee ../data/log_esclat.txt; exit ${PIPESTATUS[0]}
       - name: Desa els preus si han canviat
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/preus.json
+          git add data/preus.json data/log_esclat.txt
           git diff --cached --quiet || git commit -m "Preus $(date -u +%F)"
           git pull --rebase -q origin main
           git push

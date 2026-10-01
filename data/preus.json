@@ -136,7 +136,11 @@
       "unitat": "kg",
       "producte": "Pechuga de pollo amarillo entera"
     },
-    "hamburguesa_vedella": null,
+    "hamburguesa_vedella": {
+      "preu": 11.99,
+      "unitat": "kg",
+      "producte": "Hamburguesa extra de ternera 2 u."
+    },
     "hamburguesa_pollastre": {
       "preu": 7.72,
       "unitat": "kg",

@@ -115,7 +115,7 @@
       ],
       "inclou": [
         "burger|hamburguesa",
-        "vacuno"
+        "vacuno|ternera"
       ],
       "exclou": [
         "cerdo",
