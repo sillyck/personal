@@ -93,7 +93,8 @@
   "dates": {
     "mercadona": "2026-10-01",
     "aldi": "2026-10-01",
-    "bonarea": "2026-10-01"
+    "bonarea": "2026-10-01",
+    "esclat": "2026-10-01"
   },
   "aldi": {
     "salmo": null,
@@ -197,6 +198,32 @@
       "unitat": "kg",
       "producte": "Melocotón amarillo"
     },
+    "sindria": null
+  },
+  "esclat": {
+    "salmo": {
+      "preu": 66.61,
+      "unitat": "kg",
+      "producte": "FROYA Salmó Back Loin premium en envàs de 180 grams"
+    },
+    "llenguado": null,
+    "lluc": null,
+    "rap": null,
+    "pollastre": null,
+    "hamburguesa_vedella": null,
+    "hamburguesa_pollastre": null,
+    "tomaquet_pera": null,
+    "tomaquet_cherry": null,
+    "enciam_iceberg": null,
+    "pebrot_vermell": null,
+    "pebrot_verd": null,
+    "carbasso": null,
+    "pastanaga": null,
+    "platan": null,
+    "kiwi": null,
+    "taronja": null,
+    "maduixa": null,
+    "pressec": null,
     "sindria": null
   }
 }
