@@ -1,5 +1,5 @@
 {
-  "actualitzat": "2026-09-30",
+  "actualitzat": "2026-10-01",
   "mercadona": {
     "salmo": {
       "preu": 9.95,
@@ -48,7 +48,7 @@
       "producte": "Lechuga Iceberg"
     },
     "pebrot_vermell": {
-      "preu": 2.5,
+      "preu": 2.9,
       "unitat": "kg",
       "producte": "Pimiento rojo"
     },
@@ -63,7 +63,7 @@
       "producte": "Calabacín verde"
     },
     "pastanaga": {
-      "preu": 1.2,
+      "preu": 1.0,
       "unitat": "kg",
       "producte": "Zanahorias"
     },
@@ -82,11 +82,7 @@
       "unitat": "kg",
       "producte": "Naranjas"
     },
-    "maduixa": {
-      "preu": 7.5,
-      "unitat": "kg",
-      "producte": "Fresas"
-    },
+    "maduixa": null,
     "pressec": {
       "preu": 3.3,
       "unitat": "kg",
