@@ -18,11 +18,11 @@
   pebrot_verd (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   carbasso (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   carbasso (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  pastanaga (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  pastanaga (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  pastanaga (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   platan (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   platan (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
-  platan (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
-  kiwi (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
-  kiwi (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
   taronja (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   taronja (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
   taronja (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.

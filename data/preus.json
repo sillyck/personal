@@ -1,5 +1,5 @@
 {
-  "actualitzat": "2026-10-01",
+  "actualitzat": "2026-10-05",
   "mercadona": {
     "salmo": {
       "preu": 9.95,
@@ -91,21 +91,17 @@
     "sindria": null
   },
   "dates": {
-    "mercadona": "2026-10-01",
-    "aldi": "2026-10-01",
-    "bonarea": "2026-10-01",
-    "esclat": "2026-10-01"
+    "mercadona": "2026-10-05",
+    "aldi": "2026-10-05",
+    "bonarea": "2026-10-05",
+    "esclat": "2026-10-05"
   },
   "aldi": {
     "salmo": null,
     "llenguado": null,
     "lluc": null,
     "rap": null,
-    "pollastre": {
-      "preu": 5.49,
-      "unitat": "kg",
-      "producte": "Pechuga de pollo formato familiar"
-    },
+    "pollastre": null,
     "hamburguesa_vedella": null,
     "hamburguesa_pollastre": null,
     "tomaquet_pera": null,
@@ -113,8 +109,16 @@
     "enciam_iceberg": null,
     "pebrot_vermell": null,
     "pebrot_verd": null,
-    "carbasso": null,
-    "pastanaga": null,
+    "carbasso": {
+      "preu": 1.15,
+      "unitat": "kg",
+      "producte": "Calabacín"
+    },
+    "pastanaga": {
+      "preu": 0.89,
+      "unitat": "kg",
+      "producte": "Zanahoria"
+    },
     "platan": null,
     "kiwi": null,
     "taronja": null,
@@ -147,12 +151,12 @@
       "producte": "Hamburguesa extra de pollo 4 u."
     },
     "tomaquet_pera": {
-      "preu": 4.1,
+      "preu": 4.53,
       "unitat": "kg",
       "producte": "Tomate pera"
     },
     "tomaquet_cherry": {
-      "preu": 6.4,
+      "preu": 7.96,
       "unitat": "kg",
       "producte": "Tomate cherry"
     },
@@ -162,17 +166,17 @@
       "producte": "Lechuga iceberg"
     },
     "pebrot_vermell": {
-      "preu": 5.35,
+      "preu": 5.25,
       "unitat": "kg",
       "producte": "Pimiento rojo"
     },
     "pebrot_verd": {
-      "preu": 4.2,
+      "preu": 4.55,
       "unitat": "kg",
       "producte": "Pimiento verde"
     },
     "carbasso": {
-      "preu": 2.89,
+      "preu": 2.65,
       "unitat": "kg",
       "producte": "Calabacín"
     },
@@ -221,7 +225,7 @@
       "producte": "Mini hamburguesa de Lluç"
     },
     "rap": {
-      "preu": 14.99,
+      "preu": 9.99,
       "unitat": "kg",
       "producte": "Rap sencer"
     },
@@ -246,16 +250,16 @@
     },
     "pebrot_verd": null,
     "carbasso": {
-      "preu": 1.69,
+      "preu": 4.98,
       "unitat": "kg",
-      "producte": "Carbassó  1 u."
+      "producte": "CRÜ Carbassó Km0 en cinta de 400 g"
     },
-    "pastanaga": {
-      "preu": 1.39,
+    "pastanaga": null,
+    "platan": {
+      "preu": 2.49,
       "unitat": "kg",
-      "producte": "Pastanaga 1 u."
+      "producte": "LA COLLITA Plàtan de Canàries IGP 1 u."
     },
-    "platan": null,
     "kiwi": {
       "preu": 6.98,
       "unitat": "kg",
