@@ -1,5 +1,5 @@
 {
-  "actualitzat": "2026-10-05",
+  "actualitzat": "2026-10-12",
   "mercadona": {
     "salmo": {
       "preu": 9.95,
@@ -12,9 +12,9 @@
       "producte": "Lenguado rubio"
     },
     "lluc": {
-      "preu": 26.95,
+      "preu": 11.5,
       "unitat": "kg",
-      "producte": "Porciones de merluza"
+      "producte": "Merluza a rodajas"
     },
     "rap": null,
     "pollastre": {
@@ -33,7 +33,7 @@
       "producte": "Burger de pollo"
     },
     "tomaquet_pera": {
-      "preu": 2.0,
+      "preu": 2.2,
       "unitat": "kg",
       "producte": "Tomate pera"
     },
@@ -91,43 +91,39 @@
     "sindria": null
   },
   "dates": {
-    "mercadona": "2026-10-05",
-    "aldi": "2026-10-05",
-    "bonarea": "2026-10-05",
-    "esclat": "2026-10-05"
+    "mercadona": "2026-10-12",
+    "aldi": "2026-10-12",
+    "bonarea": "2026-10-12",
+    "esclat": "2026-10-12"
   },
   "aldi": {
     "salmo": null,
     "llenguado": null,
     "lluc": null,
     "rap": null,
-    "pollastre": null,
+    "pollastre": {
+      "preu": 6.49,
+      "unitat": "kg",
+      "producte": "Pechuga entera de pollo"
+    },
     "hamburguesa_vedella": null,
-    "hamburguesa_pollastre": null,
+    "hamburguesa_pollastre": {
+      "preu": 6.2,
+      "unitat": "kg",
+      "producte": "Hamburguesa de pollo"
+    },
     "tomaquet_pera": null,
     "tomaquet_cherry": null,
     "enciam_iceberg": null,
     "pebrot_vermell": null,
     "pebrot_verd": null,
-    "carbasso": {
-      "preu": 1.15,
-      "unitat": "kg",
-      "producte": "Calabacín"
-    },
-    "pastanaga": {
-      "preu": 0.89,
-      "unitat": "kg",
-      "producte": "Zanahoria"
-    },
+    "carbasso": null,
+    "pastanaga": null,
     "platan": null,
     "kiwi": null,
     "taronja": null,
     "maduixa": null,
-    "pressec": {
-      "preu": 1.99,
-      "unitat": "kg",
-      "producte": "Melocotón amarillo"
-    },
+    "pressec": null,
     "sindria": null
   },
   "bonarea": {
@@ -136,17 +132,17 @@
     "lluc": null,
     "rap": null,
     "pollastre": {
-      "preu": 6.85,
+      "preu": 6.55,
       "unitat": "kg",
       "producte": "Pechuga de pollo amarillo entera"
     },
     "hamburguesa_vedella": {
-      "preu": 11.99,
+      "preu": 11.62,
       "unitat": "kg",
       "producte": "Hamburguesa extra de ternera 2 u."
     },
     "hamburguesa_pollastre": {
-      "preu": 7.72,
+      "preu": 7.42,
       "unitat": "kg",
       "producte": "Hamburguesa extra de pollo 4 u."
     },
@@ -180,13 +176,9 @@
       "unitat": "kg",
       "producte": "Calabacín"
     },
-    "pastanaga": {
-      "preu": 1.45,
-      "unitat": "kg",
-      "producte": "Zanahoria bolsa"
-    },
+    "pastanaga": null,
     "platan": {
-      "preu": 2.5,
+      "preu": 2.8,
       "unitat": "kg",
       "producte": "Plátano de Canarias"
     },
@@ -202,22 +194,18 @@
     },
     "maduixa": null,
     "pressec": {
-      "preu": 3.25,
+      "preu": 3.55,
       "unitat": "kg",
       "producte": "Melocotón amarillo"
     },
     "sindria": null
   },
   "esclat": {
-    "salmo": {
-      "preu": 66.61,
-      "unitat": "kg",
-      "producte": "FROYA Salmó Back Loin premium en envàs de 180 grams"
-    },
+    "salmo": null,
     "llenguado": {
-      "preu": 29.99,
+      "preu": 39.99,
       "unitat": "kg",
-      "producte": "Llenguado"
+      "producte": "Llenguado europeu gros"
     },
     "lluc": {
       "preu": 16.61,
@@ -225,7 +213,7 @@
       "producte": "Mini hamburguesa de Lluç"
     },
     "rap": {
-      "preu": 9.99,
+      "preu": 13.99,
       "unitat": "kg",
       "producte": "Rap sencer"
     },
@@ -236,9 +224,9 @@
     },
     "hamburguesa_vedella": null,
     "hamburguesa_pollastre": {
-      "preu": 11.65,
+      "preu": 11.98,
       "unitat": "kg",
-      "producte": "BONPREU Hamburguesa de pollastre"
+      "producte": "BONPREU Hamburguesa de pollastre amb espinacs"
     },
     "tomaquet_pera": null,
     "tomaquet_cherry": null,
@@ -250,9 +238,9 @@
     },
     "pebrot_verd": null,
     "carbasso": {
-      "preu": 4.98,
+      "preu": 4.15,
       "unitat": "kg",
-      "producte": "CRÜ Carbassó Km0 en cinta de 400 g"
+      "producte": "Carbassó ecològic en safata de 600 g"
     },
     "pastanaga": null,
     "platan": {

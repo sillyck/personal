@@ -33,4 +33,4 @@
   pressec (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   sindria (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   sindria (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
-esclat: 10/20 productes amb preu
+esclat: 9/20 productes amb preu
