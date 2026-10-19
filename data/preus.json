@@ -1,8 +1,8 @@
 {
-  "actualitzat": "2026-10-12",
+  "actualitzat": "2026-10-19",
   "mercadona": {
     "salmo": {
-      "preu": 9.95,
+      "preu": 10.95,
       "unitat": "kg",
       "producte": "Salmón a rodajas"
     },
@@ -58,7 +58,7 @@
       "producte": "Pimiento verde freír"
     },
     "carbasso": {
-      "preu": 1.9,
+      "preu": 1.4,
       "unitat": "kg",
       "producte": "Calabacín verde"
     },
@@ -68,7 +68,7 @@
       "producte": "Zanahorias"
     },
     "platan": {
-      "preu": 2.5,
+      "preu": 2.8,
       "unitat": "kg",
       "producte": "Plátano de Canarias IGP"
     },
@@ -91,37 +91,37 @@
     "sindria": null
   },
   "dates": {
-    "mercadona": "2026-10-12",
-    "aldi": "2026-10-12",
-    "bonarea": "2026-10-12",
-    "esclat": "2026-10-12"
+    "mercadona": "2026-10-19",
+    "aldi": "2026-10-19",
+    "bonarea": "2026-10-19",
+    "esclat": "2026-10-19"
   },
   "aldi": {
     "salmo": null,
     "llenguado": null,
     "lluc": null,
     "rap": null,
-    "pollastre": {
-      "preu": 6.49,
-      "unitat": "kg",
-      "producte": "Pechuga entera de pollo"
-    },
+    "pollastre": null,
     "hamburguesa_vedella": null,
-    "hamburguesa_pollastre": {
-      "preu": 6.2,
-      "unitat": "kg",
-      "producte": "Hamburguesa de pollo"
-    },
+    "hamburguesa_pollastre": null,
     "tomaquet_pera": null,
     "tomaquet_cherry": null,
     "enciam_iceberg": null,
     "pebrot_vermell": null,
     "pebrot_verd": null,
-    "carbasso": null,
+    "carbasso": {
+      "preu": 1.15,
+      "unitat": "kg",
+      "producte": "Calabacín"
+    },
     "pastanaga": null,
     "platan": null,
     "kiwi": null,
-    "taronja": null,
+    "taronja": {
+      "preu": 1.69,
+      "unitat": "kg",
+      "producte": "Naranja de mesa"
+    },
     "maduixa": null,
     "pressec": null,
     "sindria": null
@@ -167,7 +167,7 @@
       "producte": "Pimiento rojo"
     },
     "pebrot_verd": {
-      "preu": 4.55,
+      "preu": 4.45,
       "unitat": "kg",
       "producte": "Pimiento verde"
     },
@@ -194,23 +194,27 @@
     },
     "maduixa": null,
     "pressec": {
-      "preu": 3.55,
+      "preu": 3.95,
       "unitat": "kg",
       "producte": "Melocotón amarillo"
     },
     "sindria": null
   },
   "esclat": {
-    "salmo": null,
-    "llenguado": {
-      "preu": 39.99,
+    "salmo": {
+      "preu": 18.69,
       "unitat": "kg",
-      "producte": "Llenguado europeu gros"
+      "producte": "MARINERAS FRESKIBO Hamburguesa de salmó en safata de 2 unitats"
+    },
+    "llenguado": {
+      "preu": 29.99,
+      "unitat": "kg",
+      "producte": "Llenguado europeu"
     },
     "lluc": {
-      "preu": 16.61,
+      "preu": 18.45,
       "unitat": "kg",
-      "producte": "Mini hamburguesa de Lluç"
+      "producte": "Filet de lluç del cap arrebossat"
     },
     "rap": {
       "preu": 13.99,
@@ -232,28 +236,28 @@
     "tomaquet_cherry": null,
     "enciam_iceberg": null,
     "pebrot_vermell": {
-      "preu": 2.99,
+      "preu": 3.49,
       "unitat": "kg",
       "producte": "Pebrot dolç vermell 1 u."
     },
     "pebrot_verd": null,
     "carbasso": {
-      "preu": 4.15,
+      "preu": 1.99,
       "unitat": "kg",
-      "producte": "Carbassó ecològic en safata de 600 g"
+      "producte": "Carbassó  1 u."
     },
     "pastanaga": null,
     "platan": {
-      "preu": 2.49,
+      "preu": 2.79,
       "unitat": "kg",
       "producte": "LA COLLITA Plàtan de Canàries IGP 1 u."
     },
-    "kiwi": {
-      "preu": 6.98,
+    "kiwi": null,
+    "taronja": {
+      "preu": 2.49,
       "unitat": "kg",
-      "producte": "ZESPRI Kiwi verd en safata de 500 g"
+      "producte": "Taronja 1 u."
     },
-    "taronja": null,
     "maduixa": null,
     "pressec": null,
     "sindria": null
