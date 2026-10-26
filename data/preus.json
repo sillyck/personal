@@ -1,5 +1,5 @@
 {
-  "actualitzat": "2026-10-19",
+  "actualitzat": "2026-10-26",
   "mercadona": {
     "salmo": {
       "preu": 10.95,
@@ -12,9 +12,9 @@
       "producte": "Lenguado rubio"
     },
     "lluc": {
-      "preu": 11.5,
+      "preu": 26.95,
       "unitat": "kg",
-      "producte": "Merluza a rodajas"
+      "producte": "Porciones de merluza"
     },
     "rap": null,
     "pollastre": {
@@ -68,7 +68,7 @@
       "producte": "Zanahorias"
     },
     "platan": {
-      "preu": 2.8,
+      "preu": 3.0,
       "unitat": "kg",
       "producte": "Plátano de Canarias IGP"
     },
@@ -91,37 +91,41 @@
     "sindria": null
   },
   "dates": {
-    "mercadona": "2026-10-19",
-    "aldi": "2026-10-19",
-    "bonarea": "2026-10-19",
-    "esclat": "2026-10-19"
+    "mercadona": "2026-10-26",
+    "aldi": "2026-10-26",
+    "bonarea": "2026-10-26",
+    "esclat": "2026-10-26"
   },
   "aldi": {
     "salmo": null,
     "llenguado": null,
     "lluc": null,
     "rap": null,
-    "pollastre": null,
-    "hamburguesa_vedella": null,
-    "hamburguesa_pollastre": null,
+    "pollastre": {
+      "preu": 9.95,
+      "unitat": "kg",
+      "producte": "Filetes de pechuga de pollo certificado"
+    },
+    "hamburguesa_vedella": {
+      "preu": 12.83,
+      "unitat": "kg",
+      "producte": "Burger meat de vacuno angus"
+    },
+    "hamburguesa_pollastre": {
+      "preu": 8.23,
+      "unitat": "kg",
+      "producte": "Hamburguesa de pollo y espinacas"
+    },
     "tomaquet_pera": null,
     "tomaquet_cherry": null,
     "enciam_iceberg": null,
     "pebrot_vermell": null,
     "pebrot_verd": null,
-    "carbasso": {
-      "preu": 1.15,
-      "unitat": "kg",
-      "producte": "Calabacín"
-    },
+    "carbasso": null,
     "pastanaga": null,
     "platan": null,
     "kiwi": null,
-    "taronja": {
-      "preu": 1.69,
-      "unitat": "kg",
-      "producte": "Naranja de mesa"
-    },
+    "taronja": null,
     "maduixa": null,
     "pressec": null,
     "sindria": null
@@ -157,7 +161,7 @@
       "producte": "Tomate cherry"
     },
     "enciam_iceberg": {
-      "preu": 1.5,
+      "preu": 1.39,
       "unitat": "ud",
       "producte": "Lechuga iceberg"
     },
@@ -172,13 +176,13 @@
       "producte": "Pimiento verde"
     },
     "carbasso": {
-      "preu": 2.65,
+      "preu": 2.99,
       "unitat": "kg",
       "producte": "Calabacín"
     },
     "pastanaga": null,
     "platan": {
-      "preu": 2.8,
+      "preu": 3.1,
       "unitat": "kg",
       "producte": "Plátano de Canarias"
     },
@@ -194,7 +198,7 @@
     },
     "maduixa": null,
     "pressec": {
-      "preu": 3.95,
+      "preu": 4.15,
       "unitat": "kg",
       "producte": "Melocotón amarillo"
     },
@@ -207,14 +211,14 @@
       "producte": "MARINERAS FRESKIBO Hamburguesa de salmó en safata de 2 unitats"
     },
     "llenguado": {
-      "preu": 29.99,
+      "preu": 25.99,
       "unitat": "kg",
       "producte": "Llenguado europeu"
     },
     "lluc": {
-      "preu": 18.45,
+      "preu": 17.16,
       "unitat": "kg",
-      "producte": "Filet de lluç del cap arrebossat"
+      "producte": "MARINERAS FRESKIBO Hamburguesa de lluç i gambes en safata de 4 unitats"
     },
     "rap": {
       "preu": 13.99,
@@ -222,16 +226,12 @@
       "producte": "Rap sencer"
     },
     "pollastre": {
-      "preu": 7.25,
+      "preu": 6.99,
       "unitat": "kg",
       "producte": "BONPREU Pit de pollastre al buit"
     },
     "hamburguesa_vedella": null,
-    "hamburguesa_pollastre": {
-      "preu": 11.98,
-      "unitat": "kg",
-      "producte": "BONPREU Hamburguesa de pollastre amb espinacs"
-    },
+    "hamburguesa_pollastre": null,
     "tomaquet_pera": null,
     "tomaquet_cherry": null,
     "enciam_iceberg": null,
@@ -242,7 +242,7 @@
     },
     "pebrot_verd": null,
     "carbasso": {
-      "preu": 1.99,
+      "preu": 1.89,
       "unitat": "kg",
       "producte": "Carbassó  1 u."
     },
@@ -253,11 +253,7 @@
       "producte": "LA COLLITA Plàtan de Canàries IGP 1 u."
     },
     "kiwi": null,
-    "taronja": {
-      "preu": 2.49,
-      "unitat": "kg",
-      "producte": "Taronja 1 u."
-    },
+    "taronja": null,
     "maduixa": null,
     "pressec": null,
     "sindria": null
