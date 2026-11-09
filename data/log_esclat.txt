@@ -13,24 +13,24 @@
   enciam_iceberg (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   pebrot_vermell (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   pebrot_vermell (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
-  pebrot_vermell (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   pebrot_verd (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   pebrot_verd (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
   pebrot_verd (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   carbasso (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  carbasso (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  pastanaga (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
+  pastanaga (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  pastanaga (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   platan (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   platan (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
-  platan (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   kiwi (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   kiwi (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  kiwi (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   taronja (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   taronja (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
-  taronja (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   maduixa (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   maduixa (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
+  maduixa (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
   pressec (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
   pressec (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
-  pressec (intent 3): Page.wait_for_function: Timeout 60000ms exceeded.
-  sindria (intent 1): Page.wait_for_function: Timeout 60000ms exceeded.
-  sindria (intent 2): Page.wait_for_function: Timeout 60000ms exceeded.
-esclat: 9/20 productes amb preu
+esclat: 10/20 productes amb preu
